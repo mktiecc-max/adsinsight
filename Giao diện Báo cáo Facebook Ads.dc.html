@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1b1d21;background:#f6f7f9;-webkit-font-smoothing:antialiased}
+  .num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  a{color:oklch(0.55 0.13 250);text-decoration:none}
+  a:hover{color:oklch(0.48 0.14 250)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#cdd1d7;border-radius:6px;border:2px solid #f6f7f9}
+  ::-webkit-scrollbar-thumb:hover{background:#b6bbc3}
+  @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div style="display:flex;flex-direction:column;height:100vh;min-width:1280px;overflow:hidden;background:#f6f7f9">
+
+  <!-- ============ HEADER ============ -->
+  <header style="flex:none;background:#fff;border-bottom:1px solid #e6e8ec">
+    <div style="display:flex;align-items:center;gap:28px;height:52px;padding:0 20px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:22px;height:22px;border-radius:6px;background:#1b1d21;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">A</div>
+        <span style="font-weight:600;font-size:14px;letter-spacing:-0.01em">AdsInsight</span>
+      </div>
+      <nav style="display:flex;align-items:stretch;gap:2px;height:52px">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+          <button onClick="{{ n.onClick }}" style="{{ n.style }}" style-hover="color:#1b1d21">
+            <span>{{ n.label }}</span>
+            <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ true }}">
+              <span class="num" style="background:oklch(0.57 0.19 27);color:#fff;font-size:10px;font-weight:600;border-radius:8px;padding:1px 5px;line-height:1.4">{{ n.badge }}</span>
+            </sc-if>
+          </button>
+        </sc-for>
+      </nav>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+        <span style="font-size:12px;color:#7c828c">Tháng 6/2026</span>
+        <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.6 0.1 250 / 0.15);color:oklch(0.45 0.13 250);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">MK</div>
+      </div>
+    </div>
+    <!-- ============ STICKY FILTER BAR ============ -->
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 20px;background:#fbfbfc;border-top:1px solid #eef0f3">
+      <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d8dce2;border-radius:8px;padding:6px 11px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#b6bbc3">
+        <span style="opacity:0.6">📅</span>
+        <span class="num">01/06/2026 – 30/06/2026</span>
+        <span style="color:#9aa0a9;font-size:11px">▾</span>
+      </div>
+      <div style="display:flex;gap:3px;padding:2px;background:#eef0f3;border-radius:8px">
+        <sc-for list="{{ datePresets }}" as="p" hint-placeholder-count="6">
+          <button style="{{ p.style }}">{{ p.label }}</button>
+        </sc-for>
+      </div>
+      <div style="width:1px;height:22px;background:#e0e3e8;margin:0 3px"></div>
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #d8dce2;border-radius:8px;padding:6px 11px;font-size:13px;cursor:pointer" style-hover="border-color:#b6bbc3">
+          <span style="color:#9aa0a9">{{ f.k }}</span>
+          <span style="font-weight:500">{{ f.v }}</span>
+          <span style="color:#9aa0a9;font-size:11px">▾</span>
+        </div>
+      </sc-for>
+      <div style="margin-left:auto;font-size:12px;color:#9aa0a9" class="num">1.240 dòng · so với 01/05–31/05</div>
+    </div>
+  </header>
+
+  <!-- ============ CONTENT ============ -->
+  <main style="flex:1;overflow:auto;position:relative">
+
+    <!-- ===== PERFORMANCE ===== -->
+    <sc-if value="{{ isPerformance }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:0">
+      <!-- level + tools bar -->
+      <div style="position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:12px 20px;background:#f6f7f9;border-bottom:1px solid #e6e8ec">
+        <div style="display:flex;gap:2px;padding:2px;background:#eaecef;border-radius:9px">
+          <sc-for list="{{ levels }}" as="lv" hint-placeholder-count="6">
+            <button onClick="{{ lv.onClick }}" style="{{ lv.style }}">{{ lv.label }}</button>
+          </sc-for>
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#5b616b;cursor:pointer;user-select:none">
+          <input type="checkbox" onChange="{{ toggleSmall }}" checked="{{ showSmall }}" style="width:14px;height:14px;accent-color:#1b1d21"/>
+          Hiện dòng cỡ mẫu nhỏ
+        </label>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d8dce2;border-radius:8px;padding:6px 10px;font-size:13px;width:190px">
+            <span style="opacity:0.5">🔍</span><span style="color:#aab0b8">Tìm chiến dịch…</span>
+          </div>
+          <button style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d8dce2;border-radius:8px;padding:6px 11px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#b6bbc3">⚙ Chọn cột</button>
+          <button style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d8dce2;border-radius:8px;padding:6px 11px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#b6bbc3">⬇ CSV</button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div style="overflow:auto;max-height:calc(100vh - 52px - 47px - 52px - 43px)">
+        <table style="border-collapse:separate;border-spacing:0;width:100%;font-size:13px;white-space:nowrap">
+          <thead>
+            <tr style="position:sticky;top:0;z-index:4">
+              <th style="position:sticky;left:0;z-index:6;background:#eef0f3;text-align:left;font-weight:600;color:#5b616b;font-size:11.5px;letter-spacing:0.02em;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid #d8dce2;min-width:250px">Tên đối tượng</th>
+              <th style="background:#eef0f3;font-weight:600;color:#5b616b;font-size:11.5px;padding:9px 10px;border-bottom:1px solid #d8dce2;text-align:center">Vùng</th>
+              <sc-for list="{{ perfCols }}" as="c" hint-placeholder-count="9">
+                <th style="{{ c.style }}">{{ c.label }}</th>
+              </sc-for>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ perfRows }}" as="r" hint-placeholder-count="6">
+              <tr onClick="{{ r.onClick }}" style="{{ r.rowStyle }}" style-hover="background:#f0f6ff">
+                <td style="{{ r.nameStyle }}">
+                  <div style="font-weight:500;color:#1b1d21;display:flex;align-items:center;gap:6px">{{ r.name }}<sc-if value="{{ r.muted }}" hint-placeholder-val="{{ true }}"><span style="color:#aab0b8;font-size:12px" title="Chỉ 12 tin nhắn / 3 SĐT — chưa đủ để so sánh">ⓘ</span></sc-if></div>
+                  <div style="font-size:11px;color:#9aa0a9;margin-top:2px">{{ r.meta }}</div>
+                </td>
+                <td style="text-align:center;padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle">
+                  <span title="{{ r.zoneName }}" style="{{ r.zoneDotStyle }}"></span>
+                </td>
+                <!-- Chi tiêu w/ heat -->
+                <td style="position:relative;text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle">
+                  <div style="{{ r.spendBar }}"></div>
+                  <span class="num" style="position:relative;font-weight:500">{{ r.spend }}</span>
+                </td>
+                <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle" class="num">{{ r.messages }}</td>
+                <td style="{{ r.cprStyle }}" class="num">{{ r.cpr }}</td>
+                <!-- SQL w/ heat -->
+                <td style="position:relative;text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle">
+                  <div style="{{ r.sqlBar }}"></div>
+                  <span class="num" style="position:relative;font-weight:500">{{ r.sql }}</span>
+                </td>
+                <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle" class="num">{{ r.pickup }}</td>
+                <td style="{{ r.cpsqlStyle }}"><span class="num" style="font-weight:600">{{ r.cpsql }}</span><sc-if value="{{ r.warn }}" hint-placeholder-val="{{ true }}"><span title="Cảnh báo: Bẫy số rẻ" style="margin-left:5px;font-size:11px">⚠️</span></sc-if></td>
+                <td style="{{ r.escapeStyle }}" class="num">{{ r.escape }}</td>
+                <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle" class="num">{{ r.l2 }}</td>
+                <td style="text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle;color:#5b616b" class="num">{{ r.cpl2 }}</td>
+              </tr>
+            </sc-for>
+            <!-- total row -->
+            <tr style="position:sticky;bottom:0;z-index:3;background:#f4f6f9;font-weight:600">
+              <td style="position:sticky;left:0;z-index:5;background:#eef1f5;padding:10px 14px;border-top:2px solid #d8dce2;font-weight:600">Tổng · 6 đối tượng</td>
+              <td style="border-top:2px solid #d8dce2;background:#f4f6f9"></td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">48,2 Tr</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">1.240</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">38,9 N</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">412</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">33,2%</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">117 N</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">48,1%</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">184</td>
+              <td style="text-align:right;padding:10px 12px;border-top:2px solid #d8dce2" class="num">262 N</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== OVERVIEW ===== -->
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px">
+      <!-- alert banner -->
+      <div onClick="{{ nav.0.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:oklch(0.57 0.19 27 / 0.08);border:1px solid oklch(0.57 0.19 27 / 0.3);border-radius:11px;cursor:pointer">
+        <span style="font-size:17px">⚠️</span>
+        <div style="font-size:13.5px"><b style="color:oklch(0.47 0.17 27)">3 cảnh báo mức Cao</b> · ước tính <span class="num">4,2 Tr đ</span> chi phí vượt chuẩn</div>
+        <span style="margin-left:auto;font-size:13px;font-weight:600;color:oklch(0.47 0.17 27)">Xem tất cả →</span>
+      </div>
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+          <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:14px 15px">
+            <div style="font-size:12px;color:#7c828c">{{ k.label }}</div>
+            <div class="num" style="font-size:23px;font-weight:600;letter-spacing:-0.02em;margin-top:6px">{{ k.value }}</div>
+            <div class="num" style="font-size:12px;margin-top:5px;{{ k.deltaStyle }}">{{ k.delta }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size:11px;color:#9aa0a9;margin-top:-6px">Mũi tên = hướng thay đổi · Màu = tốt hay xấu theo hướng riêng của từng chỉ số (CPR tăng → mũi tên lên, màu đỏ)</div>
+
+      <!-- funnel horizontal -->
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:18px 20px">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:16px">Phễu chuyển đổi</div>
+        <div style="display:flex;align-items:stretch;gap:0">
+          <sc-for list="{{ funnelH }}" as="s" hint-placeholder-count="6">
+            <div style="flex:1;display:flex;align-items:center">
+              <div style="flex:1;text-align:center">
+                <div style="font-size:11px;color:#9aa0a9">{{ s.label }}</div>
+                <div class="num" style="font-size:22px;font-weight:600;margin-top:4px;letter-spacing:-0.02em">{{ s.value }}</div>
+                <div style="font-size:11px;color:#7c828c;margin-top:3px;min-height:14px">{{ s.sub }}</div>
+                <div style="font-size:10px;color:#b6bbc3;margin-top:2px" title="Bộ phận chịu trách nhiệm">{{ s.team }}</div>
+              </div>
+              <sc-if value="{{ s.sub }}" hint-placeholder-val="x"><span style="color:#d0d4da;font-size:18px;padding:0 4px">→</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- trend + matrix -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:12.5px;font-weight:600">Xu hướng theo ngày</span>
+            <div style="display:flex;gap:12px;font-size:11px;color:#7c828c">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:oklch(0.55 0.13 250 / 0.4);border-radius:2px"></span>Chi tiêu</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:2px;background:oklch(0.57 0.19 27)"></span>CPSQL</span>
+            </div>
+          </div>
+          <div style="position:relative;height:96px">
+            <div style="display:flex;align-items:flex-end;gap:2px;height:96px">
+              <sc-for list="{{ trendBars }}" as="b" hint-placeholder-count="30"><div style="{{ b.style }}"></div></sc-for>
+            </div>
+            <svg viewBox="0 0 100 68" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">
+              <polyline points="{{ linePts }}" fill="none" stroke="oklch(0.57 0.19 27)" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+            </svg>
+          </div>
+        </div>
+        <!-- matrix scatter -->
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-size:12.5px;font-weight:600">Ma trận 2 trục</span>
+            <span style="font-size:11px;color:#9aa0a9">chấm = chi tiêu · nét đứt = trung vị</span>
+          </div>
+          <div style="position:relative;height:180px;border-left:1px solid #e6e8ec;border-bottom:1px solid #e6e8ec">
+            <!-- quadrant tints -->
+            <div style="position:absolute;left:0;top:0;width:50%;height:48%;background:oklch(0.62 0.13 155 / 0.05)"></div>
+            <div style="position:absolute;right:0;top:0;width:50%;height:48%;background:oklch(0.72 0.15 75 / 0.05)"></div>
+            <div style="position:absolute;left:0;bottom:0;width:50%;height:52%;background:oklch(0.57 0.19 27 / 0.06)"></div>
+            <div style="position:absolute;right:0;bottom:0;width:50%;height:52%;background:oklch(0.42 0.02 260 / 0.05)"></div>
+            <!-- median lines -->
+            <div style="position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed #c4c9d0"></div>
+            <div style="position:absolute;left:0;right:0;bottom:52%;border-top:1px dashed #c4c9d0"></div>
+            <!-- labels -->
+            <div style="position:absolute;left:6px;top:5px;font-size:10px;font-weight:600;color:oklch(0.45 0.12 155)">🟢 Nhân rộng</div>
+            <div style="position:absolute;right:6px;top:5px;font-size:10px;font-weight:600;color:oklch(0.5 0.12 75)">🟡 Đắt</div>
+            <div style="position:absolute;left:6px;bottom:5px;font-size:10px;font-weight:600;color:oklch(0.47 0.17 27)">🔴 Bẫy số rẻ</div>
+            <div style="position:absolute;right:6px;bottom:5px;font-size:10px;font-weight:600;color:oklch(0.42 0.02 260)">⚫ Dừng</div>
+            <sc-for list="{{ matrixPts }}" as="pt" hint-placeholder-count="5"><div title="{{ pt.name }}" style="{{ pt.style }}"></div></sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#9aa0a9;margin-top:5px"><span>← CPSQL rẻ</span><span>Trục Y: Tỷ lệ thoát bậc 0 ↑</span><span>CPSQL đắt →</span></div>
+        </div>
+      </div>
+
+      <!-- tops -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:12px">Top tốt nhất <span style="color:#9aa0a9;font-weight:400">· theo CPSQL tăng dần</span></div>
+          <sc-for list="{{ topBest }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #f0f1f4">
+              <span style="{{ t.dot }}"></span>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">{{ t.name }}</div><div style="font-size:11px;color:#9aa0a9">{{ t.sub }}</div></div>
+              <span class="num" style="font-size:14px;font-weight:600">{{ t.val }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:12px">Top cần xử lý <span style="color:#9aa0a9;font-weight:400">· theo chi phí vượt chuẩn</span></div>
+          <sc-for list="{{ topBad }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #f0f1f4">
+              <span style="{{ t.dot }}"></span>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">{{ t.name }}</div><div style="font-size:11px;color:#9aa0a9">{{ t.sub }}</div></div>
+              <span class="num" style="font-size:14px;font-weight:600;color:oklch(0.47 0.17 27)">{{ t.val }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:12.5px;font-weight:600">Diễn giải AI</span>
+          <button style="margin-left:auto;background:#1b1d21;color:#fff;border:none;border-radius:7px;padding:6px 13px;font-size:12.5px;font-weight:500;cursor:pointer">✨ Tạo diễn giải</button>
+        </div>
+        <div style="margin-top:12px;font-size:13px;line-height:1.6;color:#4a4f57;border-top:1px solid #f0f1f4;padding-top:12px">Tháng 6, CPSQL tăng 14,8% chủ yếu do <b>tỷ lệ lấy số giảm 6,4%</b> (lỗi đội chat), trong khi CPR chỉ tăng nhẹ. Hai quảng cáo <b>tuyển sinh hè</b> và <b>tư duy toán</b> chiếm 57% chi phí vượt chuẩn — nên tắt/giữ nguyên ngân sách. Nhóm <b>rèn não bộ</b> và <b>content a tùng</b> đủ điều kiện nhân rộng.</div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== FUNNEL ===== -->
+    <sc-if value="{{ isFunnel }}" hint-placeholder-val="{{ null }}">
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px">
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:18px 20px">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:16px">Phễu lớn — bậc thang</div>
+        <sc-for list="{{ funnelBig }}" as="f" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:14px;padding:7px 0">
+            <div style="width:120px;font-size:13px;font-weight:500;text-align:right">{{ f.label }}</div>
+            <div class="num" style="width:56px;text-align:right;font-size:14px;font-weight:600">{{ f.n }}</div>
+            <div style="flex:1"><div style="{{ f.barStyle }}"></div></div>
+            <div class="num" style="width:56px;font-size:13px;color:#5b616b">{{ f.rate }}</div>
+            <div style="width:70px;font-size:11px;color:oklch(0.47 0.17 27)">{{ f.team }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px">
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:14px">Tỷ lệ lấy số theo người chạy</div>
+          <sc-for list="{{ pickupByOwner }}" as="o" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:12px;padding:6px 0">
+              <div style="width:70px;font-size:12.5px">{{ o.name }}</div>
+              <div style="flex:1;height:20px;background:#f0f1f4;border-radius:5px;overflow:hidden"><div style="height:100%;width:{{ o.w }}%;background:oklch(0.55 0.13 250 / 0.6);border-radius:5px"></div></div>
+              <div class="num" style="width:48px;text-align:right;font-size:13px;font-weight:600">{{ o.v }}</div>
+            </div>
+          </sc-for>
+          <div style="margin-top:14px;padding:12px 14px;background:oklch(0.72 0.15 75 / 0.08);border:1px solid oklch(0.72 0.15 75 / 0.3);border-radius:9px;font-size:13px;line-height:1.5">
+            <b style="color:oklch(0.5 0.12 75)">Kết luận:</b> Lệch đều ở hầu hết người chạy → vấn đề nằm ở <b>kịch bản chat chung</b>, không phải một tệp riêng lẻ.
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:14px">Chất lượng nguồn</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="border:1px solid #eef0f3;border-radius:9px;padding:12px"><div style="font-size:11px;color:#9aa0a9">Organic</div><div class="num" style="font-size:20px;font-weight:600;margin-top:4px">268</div><div style="font-size:11px;color:#7c828c;margin-top:2px">thoát bậc 0: 51,2%</div></div>
+            <div style="border:1px solid #eef0f3;border-radius:9px;padding:12px"><div style="font-size:11px;color:#9aa0a9">Quảng cáo</div><div class="num" style="font-size:20px;font-weight:600;margin-top:4px">972</div><div style="font-size:11px;color:#7c828c;margin-top:2px">thoát bậc 0: 46,8%</div></div>
+          </div>
+          <div style="margin-top:14px;font-size:12.5px;font-weight:600;margin-bottom:10px">Phân bố bậc theo brand</div>
+          <div style="display:flex;gap:20px">
+            <div style="flex:1"><div style="font-size:11px;color:#9aa0a9;margin-bottom:6px">ucmas</div><div style="display:flex;height:14px;border-radius:4px;overflow:hidden"><div style="flex:52;background:#dfe3e8"></div><div style="flex:22;background:oklch(0.72 0.15 75 / 0.5)"></div><div style="flex:14;background:oklch(0.62 0.13 155 / 0.4)"></div><div style="flex:8;background:oklch(0.6 0.13 155 / 0.65)"></div><div style="flex:4;background:oklch(0.5 0.13 155)"></div></div></div>
+            <div style="flex:1"><div style="font-size:11px;color:#9aa0a9;margin-bottom:6px">uckid</div><div style="display:flex;height:14px;border-radius:4px;overflow:hidden"><div style="flex:64;background:#dfe3e8"></div><div style="flex:18;background:oklch(0.72 0.15 75 / 0.5)"></div><div style="flex:10;background:oklch(0.62 0.13 155 / 0.4)"></div><div style="flex:6;background:oklch(0.6 0.13 155 / 0.65)"></div><div style="flex:2;background:oklch(0.5 0.13 155)"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- health -->
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Sức khỏe dữ liệu</div>
+        <div style="font-size:11px;color:#9aa0a9;margin-bottom:12px">Ba con số này tụt đột ngột là dấu hiệu dữ liệu hỏng — phát hiện trước khi báo cáo kịp sai</div>
+        <sc-for list="{{ health }}" as="h" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:14px;padding:8px 0;border-top:1px solid #f0f1f4">
+            <div style="width:200px;font-size:13px;display:flex;align-items:center;gap:6px">{{ h.label }}<sc-if value="{{ h.warn }}" hint-placeholder-val="{{ false }}"><span title="Tầng chất lượng gần như không có dữ liệu">⚠️</span></sc-if></div>
+            <div class="num" style="width:56px;text-align:right;font-size:14px;font-weight:600">{{ h.v }}</div>
+            <div style="flex:1;height:8px;background:#f0f1f4;border-radius:4px;overflow:hidden"><div style="height:100%;width:{{ h.w }}%;background:oklch(0.55 0.13 250 / 0.55)"></div></div>
+            <div style="width:120px;font-size:11px;color:#9aa0a9">{{ h.prev }}</div>
+          </div>
+        </sc-for>
+        <div style="margin-top:12px;padding:11px 14px;background:oklch(0.57 0.19 27 / 0.07);border:1px solid oklch(0.57 0.19 27 / 0.25);border-radius:9px;font-size:12.5px"><b style="color:oklch(0.47 0.17 27)">⚠️ Lead khớp CRM 12,6%</b> — tầng chất lượng gần như không có dữ liệu. Bậc 2–4 chưa đọc được đáng tin.</div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== ALERTS ===== -->
+    <sc-if value="{{ isAlerts }}" hint-placeholder-val="{{ null }}">
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;gap:3px;padding:3px;background:#eaecef;border-radius:9px">
+          <sc-for list="{{ alertFilters }}" as="af" hint-placeholder-count="4"><button onClick="{{ af.onClick }}" style="{{ af.style }}">{{ af.label }}</button></sc-for>
+        </div>
+        <span style="margin-left:auto;font-size:12px;color:#9aa0a9">xếp theo chi phí vượt chuẩn giảm dần</span>
+      </div>
+      <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="4">
+        <div style="background:#fff;border:1px solid #e6e8ec;border-left:3px solid {{ a.dotColor }};border-radius:11px;padding:16px 18px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:9px">
+                <span style="width:8px;height:8px;border-radius:50%;background:{{ a.dotColor }}"></span>
+                <span style="font-size:13.5px;font-weight:700;letter-spacing:0.02em">{{ a.label }}</span>
+                <span style="font-size:10.5px;padding:2px 8px;border-radius:20px;background:{{ a.dotColor }}1f;color:{{ a.dotColor }};font-weight:600">{{ a.sevLabel }}</span>
+              </div>
+              <div style="font-size:12.5px;color:#7c828c;margin-top:5px">{{ a.obj }}</div>
+            </div>
+            <div style="text-align:right"><div style="font-size:10.5px;color:#9aa0a9">Vượt chuẩn</div><div class="num" style="font-size:16px;font-weight:700;color:oklch(0.47 0.17 27)">{{ a.over }}</div></div>
+          </div>
+          <div style="display:flex;gap:24px;margin:14px 0;padding:12px 14px;background:#fafbfc;border-radius:9px">
+            <sc-for list="{{ a.ev }}" as="e" hint-placeholder-count="2">
+              <div><div style="font-size:11px;color:#9aa0a9">{{ e.label }}</div><div class="num" style="font-size:16px;margin-top:2px;{{ e.valStyle }}">{{ e.value }}</div><div style="font-size:11px;color:#7c828c;margin-top:1px">{{ e.ref }}</div></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:12px">
+            <div style="flex:1;font-size:13px;line-height:1.5;color:#3a3f47"><span style="color:#9aa0a9">→ </span>{{ a.act }}</div>
+            <button style="flex:none;background:#fff;border:1px solid #d8dce2;border-radius:7px;padding:6px 12px;font-size:12.5px;font-weight:500;cursor:pointer">Xem chi tiết</button>
+            <button style="flex:none;background:#fff;border:1px solid #d8dce2;border-radius:7px;padding:6px 12px;font-size:12.5px;color:#7c828c;cursor:pointer">Bỏ qua 7 ngày</button>
+          </div>
+        </div>
+      </sc-for>
+      <div style="background:#fbfbfc;border:1px dashed #d8dce2;border-radius:11px;padding:14px 16px;font-size:12.5px;color:#7c828c;line-height:1.5">
+        <b style="color:#5b616b">ⓘ 3 quy tắc chưa chạy được:</b> Bão hòa tệp · Creative mòn · Đấu giá đắt lên<br>Cần bổ sung cột vào nguồn dữ liệu: <span class="num">impressions, clicks, frequency</span>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== LEADS ===== -->
+    <sc-if value="{{ isLeads }}" hint-placeholder-val="{{ null }}">
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #d8dce2;border-radius:8px;padding:7px 12px;font-size:13px;width:320px"><span style="opacity:0.5">🔍</span><span style="color:#aab0b8">Tìm SĐT (mọi định dạng: 0912… · 84912… · 912…)</span></div>
+        <span style="margin-left:auto;font-size:12px;color:#9aa0a9" class="num">2.418 lead</span>
+      </div>
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;overflow:hidden">
+        <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px">
+          <thead><tr>
+            <sc-for list="{{ leadHead }}" as="h" hint-placeholder-count="8"><th style="text-align:left;font-size:11px;font-weight:600;color:#7c828c;text-transform:uppercase;letter-spacing:0.02em;padding:10px 14px;background:#f6f7f9;border-bottom:1px solid #e6e8ec">{{ h }}</th></sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ leadRows }}" as="l" hint-placeholder-count="6">
+              <tr style-hover="background:#fafbfc">
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4"><span class="num" style="font-weight:500">{{ l.phone }}</span> <span style="color:#c4c9d0;cursor:pointer" title="Sao chép">⧉</span></td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4">{{ l.name }}</td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4" class="num">{{ l.date }}</td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4">
+                  <sc-if value="{{ l.organic }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;padding:2px 8px;border-radius:20px;background:oklch(0.55 0.13 250 / 0.12);color:oklch(0.45 0.13 250);font-weight:600">Organic</span></sc-if>
+                  <sc-if value="{{ l.ad }}" hint-placeholder-val="x"><span style="color:#5b616b">{{ l.ad }}</span></sc-if>
+                </td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4;color:#7c828c">{{ l.camp }}</td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4"><span style="{{ l.rankStyle }}">Bậc {{ l.rank }}</span></td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4;text-align:center">{{ l.crmIcon }}</td>
+                <td style="padding:10px 14px;border-bottom:1px solid #f0f1f4"><span style="{{ l.stStyle }}">{{ l.st }}</span></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== SYNC ===== -->
+    <sc-if value="{{ isSync }}" hint-placeholder-val="{{ null }}">
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:11px;color:#9aa0a9;text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Admin · Đồng bộ & nhật ký</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr) auto;gap:12px;align-items:stretch">
+        <sc-for list="{{ syncSources }}" as="s" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px">
+            <div style="display:flex;align-items:center;gap:9px"><span style="font-size:18px">{{ s.icon }}</span><span style="font-size:14px;font-weight:600">{{ s.name }}</span></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;color:#5b616b">{{ s.statusIcon }} <span>{{ s.when }}</span></div>
+            <div class="num" style="font-size:12px;color:#9aa0a9;margin-top:3px">{{ s.rows }}</div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button style="flex:1;background:#fff;border:1px solid #1b1d21;color:#1b1d21;border-radius:7px;padding:7px 0;font-size:12.5px;font-weight:600;cursor:pointer">Chạy thử</button>
+              <button style="flex:1;background:#1b1d21;color:#fff;border:none;border-radius:7px;padding:7px 0;font-size:12.5px;font-weight:600;cursor:pointer">Đồng bộ</button>
+            </div>
+          </div>
+        </sc-for>
+        <div style="display:flex;align-items:center"><button style="height:100%;background:oklch(0.55 0.13 250);color:#fff;border:none;border-radius:12px;padding:0 20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">⟳ Đồng bộ<br>tất cả</button></div>
+      </div>
+
+      <!-- progress -->
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:500"><span>Đang đồng bộ Lead…</span><button style="background:none;border:1px solid #d8dce2;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;color:#7c828c">Hủy</button></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+          <div style="flex:1;height:10px;background:#eef0f3;border-radius:6px;overflow:hidden"><div style="height:100%;width:68%;background:oklch(0.55 0.13 250);border-radius:6px"></div></div>
+          <span class="num" style="font-size:13px;font-weight:600">68%</span>
+        </div>
+        <div class="num" style="font-size:12px;color:#7c828c;margin-top:8px">1.642 / 2.418 dòng · <span style="color:oklch(0.45 0.12 155)">✔ Hợp lệ 1.630</span> · <span style="color:oklch(0.5 0.12 75)">⚠ Lỗi 12</span></div>
+      </div>
+
+      <!-- result -->
+      <div style="background:oklch(0.62 0.13 155 / 0.05);border:1px solid oklch(0.62 0.13 155 / 0.3);border-radius:12px;padding:16px 18px">
+        <div style="font-size:13px;font-weight:600;color:oklch(0.4 0.11 155)">✅ Hoàn tất lúc <span class="num">09:14</span> · 42 giây</div>
+        <div class="num" style="font-size:13px;color:#4a4f57;margin-top:8px">1.240 dòng chi tiêu · 87 lead mới · 34 thay đổi bậc · 12 lỗi</div>
+        <div class="num" style="font-size:12px;color:#7c828c;margin-top:5px">Sức khỏe: có quảng cáo 78,4% · khớp CRM 12,6% · SĐT lỗi 0,3%</div>
+        <a href="#" style="display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600">Xem 12 dòng lỗi →</a>
+      </div>
+
+      <!-- history -->
+      <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;overflow:hidden">
+        <div style="font-size:12.5px;font-weight:600;padding:12px 16px;border-bottom:1px solid #eef0f3">Lịch sử 20 lần gần nhất</div>
+        <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px">
+          <thead><tr><sc-for list="{{ syncHead }}" as="h" hint-placeholder-count="6"><th style="text-align:left;font-size:11px;color:#9aa0a9;font-weight:600;padding:8px 16px;background:#fafbfc">{{ h }}</th></sc-for></tr></thead>
+          <tbody>
+            <sc-for list="{{ syncHistory }}" as="r" hint-placeholder-count="4">
+              <tr><td class="num" style="padding:8px 16px;border-top:1px solid #f0f1f4">{{ r.time }}</td><td style="padding:8px 16px;border-top:1px solid #f0f1f4">{{ r.src }}</td><td style="padding:8px 16px;border-top:1px solid #f0f1f4">{{ r.mode }}</td><td class="num" style="padding:8px 16px;border-top:1px solid #f0f1f4">{{ r.result }}</td><td class="num" style="padding:8px 16px;border-top:1px solid #f0f1f4;color:#7c828c">{{ r.dur }}</td><td class="num" style="padding:8px 16px;border-top:1px solid #f0f1f4">{{ r.err }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== SETTINGS ===== -->
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ null }}">
+    <div style="padding:16px 20px;display:flex;gap:18px">
+      <aside style="flex:none;width:190px">
+        <div style="font-size:11px;color:#9aa0a9;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;margin-bottom:10px">Admin · Cài đặt</div>
+        <sc-for list="{{ settingsNav }}" as="s" hint-placeholder-count="4"><div style="{{ s.style }}">{{ s.label }}</div></sc-for>
+      </aside>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;max-width:760px">
+        <!-- kết nối -->
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px">1 · Kết nối nguồn — Quảng cáo</div>
+          <div style="display:grid;grid-template-columns:130px 1fr;gap:10px 14px;align-items:center;font-size:13px">
+            <span style="color:#7c828c">Link nguồn</span><input value="https://docs.google.com/spreadsheets/d/1aBc…" style="border:1px solid #d8dce2;border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit"/>
+            <span style="color:#7c828c">Tab</span><div style="border:1px solid #d8dce2;border-radius:8px;padding:8px 11px;color:#5b616b">Dữ liệu quảng cáo ▾</div>
+            <span style="color:#7c828c">Dòng tiêu đề</span><input value="1" class="num" style="border:1px solid #d8dce2;border-radius:8px;padding:8px 11px;width:70px;font-family:inherit"/>
+          </div>
+          <button style="margin-top:14px;background:#fff;border:1px solid #1b1d21;color:#1b1d21;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer">🔍 Đọc cấu trúc</button>
+        </div>
+        <!-- ánh xạ -->
+        <div style="background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:18px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:13px;font-weight:600">2 · Ánh xạ trường</span><button style="background:#fff;border:1px solid #d8dce2;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer">✨ Tự động khớp</button></div>
+          <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px">
+            <thead><tr><th style="text-align:left;font-size:11px;color:#9aa0a9;font-weight:600;padding:7px 10px">Trường chuẩn</th><th style="text-align:left;font-size:11px;color:#9aa0a9;font-weight:600;padding:7px 10px">Cột trong nguồn</th><th style="text-align:left;font-size:11px;color:#9aa0a9;font-weight:600;padding:7px 10px">Xử lý</th><th style="width:30px"></th></tr></thead>
+            <tbody>
+              <sc-for list="{{ fieldMap }}" as="m" hint-placeholder-count="4">
+                <tr>
+                  <td style="padding:6px 10px;border-top:1px solid #f0f1f4">{{ m.field }}<sc-if value="{{ m.req }}" hint-placeholder-val="{{ false }}"><span style="color:oklch(0.57 0.19 27)"> ●</span></sc-if></td>
+                  <td style="padding:6px 10px;border-top:1px solid #f0f1f4"><div style="{{ m.selStyle }}">{{ m.col }} ▾</div></td>
+                  <td style="padding:6px 10px;border-top:1px solid #f0f1f4"><div style="border:1px solid #d8dce2;border-radius:7px;padding:6px 9px;color:#5b616b">{{ m.proc }} ▾</div></td>
+                  <td style="padding:6px 10px;border-top:1px solid #f0f1f4;text-align:center">{{ m.ok }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <div style="margin-top:12px;font-size:11.5px;color:#9aa0a9">● = bắt buộc. Chưa map đủ trường bắt buộc → chặn lưu.</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button style="background:#fff;border:1px solid #1b1d21;color:#1b1d21;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Chạy thử</button>
+          <button style="background:#1b1d21;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">Lưu & Đồng bộ</button>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="flex:none;display:flex;align-items:center;gap:14px;height:38px;padding:0 20px;background:#fff;border-top:1px solid #e6e8ec;font-size:12px;color:#7c828c">
+    <span style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:oklch(0.62 0.13 155)"></span>Đồng bộ lần cuối: <span class="num">24/07/2026 09:14</span></span>
+    <span style="color:#c4c9d0">·</span>
+    <span class="num">1.240 dòng</span>
+    <button style="margin-left:auto;background:#1b1d21;color:#fff;border:none;border-radius:7px;padding:6px 13px;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#33363c">⟳ Đồng bộ ngay</button>
+  </footer>
+
+  <!-- ============ DETAIL DRAWER ============ -->
+  <sc-if value="{{ drawer }}" hint-placeholder-val="{{ null }}">
+    <div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(20,22,26,0.28);z-index:40;animation:fadeIn 0.15s ease"></div>
+    <aside style="position:fixed;top:0;right:0;bottom:0;width:520px;background:#fff;z-index:41;box-shadow:-8px 0 32px rgba(0,0,0,0.14);animation:slideIn 0.22s cubic-bezier(0.32,0.72,0,1);display:flex;flex-direction:column">
+      <div style="flex:none;padding:18px 22px;border-bottom:1px solid #eef0f3">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em">{{ drawer.name }}</div>
+            <div style="font-size:12px;color:#9aa0a9;margin-top:3px">{{ drawer.meta }}</div>
+          </div>
+          <button onClick="{{ closeDrawer }}" style="background:#f0f1f4;border:none;border-radius:7px;width:30px;height:30px;font-size:15px;cursor:pointer;color:#5b616b" style-hover="background:#e4e6ea">✕</button>
+        </div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:20px;font-size:12.5px;font-weight:600;{{ drawer.zoneChipStyle }}">
+          <span style="{{ drawer.zoneDotStyle }}"></span>{{ drawer.zoneName }}
+        </div>
+      </div>
+      <div style="flex:1;overflow:auto;padding:22px">
+        <!-- DIAGNOSTIC BREAKDOWN -->
+        <div style="border:1px solid #e6e8ec;border-radius:12px;overflow:hidden;background:#fbfbfc">
+          <div style="padding:11px 16px;background:#f2f3f5;border-bottom:1px solid #e6e8ec;font-size:11.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#5b616b">Phân rã chẩn đoán</div>
+          <div style="padding:20px 16px">
+            <div style="display:flex;align-items:stretch;gap:8px;text-align:center">
+              <div style="flex:1.1;background:#fff;border:1px solid #e6e8ec;border-radius:9px;padding:12px 8px">
+                <div style="font-size:10.5px;color:#9aa0a9;text-transform:uppercase;letter-spacing:0.03em">CP_L2</div>
+                <div class="num" style="font-size:19px;font-weight:700;margin-top:5px">420 N</div>
+                <div style="font-size:10px;color:#aab0b8;margin-top:2px">giá 1 lead bậc 2</div>
+              </div>
+              <div style="display:flex;align-items:center;font-size:17px;color:#c4c9d0">=</div>
+              <div style="flex:1;border-radius:9px;padding:12px 8px;background:oklch(0.62 0.13 155 / 0.1);border:1px solid oklch(0.62 0.13 155 / 0.3)">
+                <div style="font-size:10.5px;color:oklch(0.42 0.11 155);text-transform:uppercase;letter-spacing:0.03em">CPR</div>
+                <div class="num" style="font-size:19px;font-weight:700;margin-top:5px;color:oklch(0.42 0.11 155)">33,7 N</div>
+                <div style="font-size:10px;color:oklch(0.5 0.09 155);margin-top:2px">Quảng cáo · tốt</div>
+              </div>
+              <div style="display:flex;align-items:center;font-size:15px;color:#c4c9d0">×</div>
+              <div style="flex:1;border-radius:9px;padding:12px 8px;background:oklch(0.62 0.13 155 / 0.1);border:1px solid oklch(0.62 0.13 155 / 0.3)">
+                <div style="font-size:10.5px;color:oklch(0.42 0.11 155);text-transform:uppercase;letter-spacing:0.03em">1 / lấy số</div>
+                <div class="num" style="font-size:19px;font-weight:700;margin-top:5px;color:oklch(0.42 0.11 155)">2,50</div>
+                <div style="font-size:10px;color:oklch(0.5 0.09 155);margin-top:2px">Đội chat · tốt</div>
+              </div>
+              <div style="display:flex;align-items:center;font-size:15px;color:#c4c9d0">×</div>
+              <div style="flex:1;border-radius:9px;padding:12px 8px;background:oklch(0.57 0.19 27 / 0.1);border:1px solid oklch(0.57 0.19 27 / 0.35)">
+                <div style="font-size:10.5px;color:oklch(0.47 0.17 27);text-transform:uppercase;letter-spacing:0.03em">1 / chuyển bậc</div>
+                <div class="num" style="font-size:19px;font-weight:700;margin-top:5px;color:oklch(0.47 0.17 27)">4,98</div>
+                <div style="font-size:10px;color:oklch(0.52 0.15 27);margin-top:2px">Tư vấn · xấu</div>
+              </div>
+            </div>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:9px;padding:12px 14px;background:oklch(0.57 0.19 27 / 0.08);border:1px solid oklch(0.57 0.19 27 / 0.25);border-radius:9px">
+              <span style="font-size:17px">→</span>
+              <div style="font-size:13.5px;line-height:1.5">Vấn đề nằm ở <b style="color:oklch(0.47 0.17 27)">ĐỘI TƯ VẤN</b> — giá quảng cáo và tỷ lệ lấy số đều tốt, nhưng số gần như không chuyển được lên bậc 2.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- tabs -->
+        <div style="display:flex;gap:2px;margin-top:20px;padding:3px;background:#eef0f3;border-radius:9px">
+          <sc-for list="{{ drawerTabs }}" as="t" hint-placeholder-count="4">
+            <button style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+
+        <!-- chỉ số grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;margin-top:16px;background:#e6e8ec;border:1px solid #e6e8ec;border-radius:10px;overflow:hidden">
+          <sc-for list="{{ drawerMetrics }}" as="m" hint-placeholder-count="6">
+            <div style="background:#fff;padding:12px 13px">
+              <div style="font-size:11px;color:#9aa0a9">{{ m.label }}</div>
+              <div class="num" style="font-size:16px;font-weight:600;margin-top:4px">{{ m.value }}</div>
+              <div class="num" style="font-size:11px;margin-top:3px;{{ m.deltaStyle }}">{{ m.delta }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- mini trend -->
+        <div style="margin-top:16px;border:1px solid #e6e8ec;border-radius:10px;padding:14px 16px;background:#fff">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:12px">CPR & tỷ lệ lấy số theo ngày</div>
+          <div style="display:flex;align-items:flex-end;gap:3px;height:90px">
+            <sc-for list="{{ miniTrend }}" as="b" hint-placeholder-count="14">
+              <div style="{{ b.style }}"></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- recent leads -->
+        <div style="margin-top:16px">
+          <div style="font-size:12.5px;font-weight:600;margin-bottom:9px">20 lead gần nhất</div>
+          <div style="border:1px solid #e6e8ec;border-radius:10px;overflow:hidden">
+            <sc-for list="{{ drawerLeads }}" as="l" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:9px 13px;border-bottom:1px solid #f0f1f4;font-size:12.5px">
+                <span class="num" style="color:#1b1d21;font-weight:500">{{ l.phone }}</span>
+                <span style="color:#9aa0a9;font-size:11.5px">{{ l.date }}</span>
+                <span style="margin-left:auto;{{ l.rankStyle }}">{{ l.rank }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { page: 'performance', drawer: null, level: 'campaign', showSmall: false, aiGenerated: false, alertFilter: 'all' };
+
+  go(p){ return () => this.setState({ page: p, drawer: null }); }
+
+  // ---- palette ----
+  C = {
+    good:'oklch(0.6 0.13 155)', goodD:'oklch(0.45 0.12 155)',
+    bad:'oklch(0.57 0.19 27)', badD:'oklch(0.47 0.17 27)',
+    amber:'oklch(0.72 0.15 75)', amberD:'oklch(0.5 0.12 75)',
+    black:'oklch(0.42 0.02 260)',
+    blue:'oklch(0.55 0.13 250)',
+    ink:'#1b1d21', muted:'#7c828c'
+  };
+  zoneColor(z){ return { green:this.C.good, red:this.C.bad, amber:this.C.amber, black:this.C.black }[z]; }
+  zoneName(z){ return { green:'Nhân rộng', red:'Bẫy số rẻ', amber:'Đúng tệp nhưng đắt', black:'Dừng' }[z]; }
+
+  navBtnStyle(active){
+    return `display:flex;align-items:center;gap:7px;background:none;border:none;border-bottom:2px solid ${active?this.C.ink:'transparent'};color:${active?this.C.ink:'#7c828c'};font-family:inherit;font-size:13.5px;font-weight:${active?600:500};cursor:pointer;padding:0 3px;height:52px`;
+  }
+  pillStyle(active,accent){
+    return `background:${active?'#fff':'transparent'};color:${active?this.C.ink:'#7c828c'};border:none;border-radius:7px;padding:5px 11px;font-family:inherit;font-size:12.5px;font-weight:${active?600:500};cursor:pointer;box-shadow:${active?'0 1px 2px rgba(0,0,0,0.08)':'none'}`;
+  }
+  colHeadStyle(){ return 'background:#eef0f3;font-weight:600;color:#5b616b;font-size:11.5px;letter-spacing:0.02em;text-transform:uppercase;padding:9px 12px;border-bottom:1px solid #d8dce2;text-align:right;white-space:nowrap'; }
+
+  renderVals(){
+    const p = this.state.page;
+    const nav = [
+      ['overview','Tổng quan'],['performance','Hiệu suất'],['funnel','Phễu'],
+      ['alerts','Cảnh báo',3],['leads','Lead'],['sync','Đồng bộ'],['settings','Cài đặt']
+    ].map(([id,label,badge]) => ({ label, badge, style:this.navBtnStyle(p===id), onClick:this.go(id) }));
+
+    const datePresets = ['7 ngày','30 ngày','90 ngày','Tháng này','Tháng trước'].map((label,i)=>({
+      label, style:this.pillStyle(i===1)
+    }));
+    const filters = [{k:'Brand',v:'Tất cả'},{k:'Người chạy',v:'Tất cả'},{k:'Tài khoản',v:'Tất cả'}];
+
+    const levels = [
+      ['campaign','Chiến dịch'],['adset','Nhóm QC'],['ad','Quảng cáo'],
+      ['creative','Creative'],['owner','Người chạy'],['brand','Brand']
+    ].map(([id,label])=>({ label, style:this.pillStyle(this.state.level===id), onClick:()=>this.setState({level:id}) }));
+
+    // ---- performance columns ----
+    const perfCols = ['Chi tiêu','Tin nhắn','CPR','SQL','Lấy số','CPSQL','Thoát bậc 0','Bậc 2+','CP_L2']
+      .map(label=>({ label, style:this.colHeadStyle() }));
+
+    const rawRows = [
+      {name:'ucmas / mess / content a tùng', meta:'haitran · ucmas · Tin nhắn', zone:'green', spend:'12,4 Tr', spendPct:100, messages:'318', cpr:'38,9 N', cprGood:'neutral', sql:'112', sqlPct:100, pickup:'35,2%', cpsql:'110 N', cpsqlGood:'good', escape:'52,1%', escapeGood:'good', l2:'61', cpl2:'305 N'},
+      {name:'ucmas / mess / tuyển sinh hè', meta:'haicm · ucmas · Tin nhắn', zone:'red', warn:true, spend:'8,1 Tr', spendPct:65, messages:'240', cpr:'33,7 N', cprGood:'good', sql:'96', sqlPct:86, pickup:'40,0%', cpsql:'84 N', cpsqlGood:'good', escape:'18,2%', escapeGood:'bad', l2:'12', cpl2:'675 N'},
+      {name:'ucmas / mess / rèn não bộ', meta:'haitran · ucmas · Tin nhắn', zone:'green', spend:'9,6 Tr', spendPct:77, messages:'268', cpr:'40,1 N', cprGood:'neutral', sql:'98', sqlPct:88, pickup:'36,6%', cpsql:'98 N', cpsqlGood:'good', escape:'50,4%', escapeGood:'good', l2:'49', cpl2:'288 N'},
+      {name:'ucmas / mess / quà tặng hè', meta:'linhpt · ucmas · Tin nhắn', zone:'amber', spend:'6,8 Tr', spendPct:55, messages:'210', cpr:'41,2 N', cprGood:'bad', sql:'74', sqlPct:66, pickup:'35,2%', cpsql:'172 N', cpsqlGood:'bad', escape:'49,0%', escapeGood:'good', l2:'34', cpl2:'375 N'},
+      {name:'uckid / mess / tư duy toán', meta:'linhpt · uckid · Tin nhắn', zone:'black', spend:'5,2 Tr', spendPct:42, messages:'158', cpr:'42,1 N', cprGood:'bad', sql:'39', sqlPct:35, pickup:'24,7%', cpsql:'341 N', cpsqlGood:'bad', escape:'21,0%', escapeGood:'bad', l2:'8', cpl2:'—'},
+      {name:'uckid / mess / bé 5 tuổi', meta:'haicm · uckid · Tin nhắn', zone:null, muted:true, spend:'1,2 Tr', spendPct:10, messages:'12', cpr:'—', sql:'3', sqlPct:3, pickup:'—', cpsql:'—', escape:'—', l2:'—', cpl2:'—'}
+    ];
+    const visRows = this.state.showSmall ? rawRows : rawRows.filter(r=>!r.muted);
+    const gb = (g)=> g==='good'?this.C.goodD : g==='bad'?this.C.badD : this.C.ink;
+    const cellR = 'text-align:right;padding:8px 12px;border-bottom:1px solid #eef0f3;vertical-align:middle';
+    const perfRows = visRows.map(r=>({
+      ...r,
+      zoneName: r.zone? this.zoneName(r.zone) : 'Cỡ mẫu nhỏ',
+      onClick: r.muted ? (()=>{}) : (()=>this.setState({ drawer:r })),
+      rowStyle: `cursor:${r.muted?'default':'pointer'};background:${r.muted?'repeating-linear-gradient(45deg,#fbfbfc,#fbfbfc 6px,#f4f5f7 6px,#f4f5f7 12px)':'#fff'};opacity:${r.muted?0.55:1};transition:background 0.1s`,
+      nameStyle: `position:sticky;left:0;z-index:2;background:${r.muted?'#fafbfc':'#fff'};padding:8px 14px;border-bottom:1px solid #eef0f3;min-width:250px`,
+      zoneDotStyle: r.zone? `display:inline-block;width:11px;height:11px;border-radius:50%;background:${this.zoneColor(r.zone)}` : 'display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px dashed #c4c9d0',
+      spendBar: `position:absolute;right:0;top:5px;bottom:5px;width:${r.spendPct}%;background:oklch(0.55 0.13 250 / 0.1);border-radius:3px`,
+      sqlBar: `position:absolute;right:0;top:5px;bottom:5px;width:${r.sqlPct}%;background:oklch(0.62 0.13 155 / 0.13);border-radius:3px`,
+      cprStyle: `${cellR};color:${gb(r.cprGood)};font-weight:${r.cprGood&&r.cprGood!=='neutral'?600:400}`,
+      cpsqlStyle: `${cellR};color:${gb(r.cpsqlGood)}`,
+      escapeStyle: `${cellR};color:${gb(r.escapeGood)}`
+    }));
+
+    // ---- drawer derived ----
+    const d = this.state.drawer;
+    let drawerVals = {};
+    if(d){
+      drawerVals = {
+        drawerTabs: ['Chỉ số','Theo ngày','Phân bố bậc','Lead'].map((label,i)=>({label,style:this.pillStyle(i===0)})),
+        drawerMetrics: [
+          {label:'Chi tiêu',value:d.spend,delta:'▲ 9,1%',deltaStyle:`color:${this.C.muted}`},
+          {label:'CPR',value:d.cpr,delta:'▼ 4,2%',deltaStyle:`color:${this.C.goodD}`},
+          {label:'Tỷ lệ lấy số',value:d.pickup,delta:'▲ 3,0%',deltaStyle:`color:${this.C.goodD}`},
+          {label:'SQL',value:d.sql,delta:'▲ 6,8%',deltaStyle:`color:${this.C.goodD}`},
+          {label:'CPSQL',value:d.cpsql,delta:'▼ 5,1%',deltaStyle:`color:${this.C.goodD}`},
+          {label:'Thoát bậc 0',value:d.escape,delta:'▼ 22,0%',deltaStyle:`color:${this.C.badD}`}
+        ],
+        miniTrend: Array.from({length:14},(_,i)=>{
+          const h = 30 + Math.round(45*Math.abs(Math.sin(i*0.9+1)));
+          return { style:`flex:1;height:${h}px;background:oklch(0.55 0.13 250 / 0.55);border-radius:3px 3px 0 0` };
+        }),
+        drawerLeads: [
+          {phone:'0912 445 118', date:'23/07', rank:'Bậc 2'},
+          {phone:'0987 002 431', date:'23/07', rank:'Bậc 0'},
+          {phone:'0903 771 260', date:'22/07', rank:'Bậc 1'},
+          {phone:'0938 114 907', date:'22/07', rank:'Bậc 0'},
+          {phone:'0977 320 845', date:'21/07', rank:'Bậc 0'}
+        ].map(l=>({...l, rankStyle:`padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:${l.rank==='Bậc 0'?'#f0f1f4':'oklch(0.62 0.13 155 / 0.14)'};color:${l.rank==='Bậc 0'?this.C.muted:this.C.goodD}`})),
+        drawer: {
+          ...d,
+          zoneName: this.zoneName(d.zone||'red'),
+          zoneDotStyle:`display:inline-block;width:9px;height:9px;border-radius:50%;background:${this.zoneColor(d.zone||'red')}`,
+          zoneChipStyle:`background:${this.zoneColor(d.zone||'red')}1f;color:${this.zoneColor(d.zone||'red')}`
+        }
+      };
+    }
+
+    // ---- OVERVIEW ----
+    const dc = (g)=> g==='good'?this.C.goodD : g==='bad'?this.C.badD : this.C.muted;
+    const kpis = [
+      {label:'Chi tiêu', value:'48,2 Tr', delta:'▲ 12,3%', g:'neutral'},
+      {label:'Tin nhắn', value:'1.240', delta:'▲ 8,1%', g:'good'},
+      {label:'CPR', value:'38,9 N', delta:'▲ 3,9%', g:'bad'},
+      {label:'SQL', value:'412', delta:'▼ 2,1%', g:'bad'},
+      {label:'Tỷ lệ lấy số', value:'33,2%', delta:'▼ 6,4%', g:'bad'},
+      {label:'CPSQL', value:'117 N', delta:'▲ 14,8%', g:'bad'}
+    ].map(k=>({...k, deltaStyle:`color:${dc(k.g)};font-weight:600`}));
+
+    const funnelH = [
+      {label:'Chi tiêu', value:'48,2 Tr', sub:''},
+      {label:'Tin nhắn', value:'1.240', sub:'CPR 38,9 N', team:'Meta / người chạy ads'},
+      {label:'SQL', value:'412', sub:'33,2% lấy số', team:'Đội chat'},
+      {label:'Bậc 1+', value:'198', sub:'48,1% thoát bậc 0', team:'Đội tư vấn'},
+      {label:'Bậc 2+', value:'87', sub:'43,9% chuyển bậc', team:'Đội tư vấn'},
+      {label:'Bậc 4', value:'9', sub:'chưa chín', team:'—', muted:true}
+    ];
+
+    const matrixPts = [
+      {name:'content a tùng', zone:'green', l:28, b:78, sz:26},
+      {name:'tuyển sinh hè', zone:'red', l:25, b:22, sz:21, ring:true},
+      {name:'rèn não bộ', zone:'green', l:35, b:70, sz:23},
+      {name:'quà tặng hè', zone:'amber', l:70, b:72, sz:20},
+      {name:'tư duy toán', zone:'black', l:75, b:24, sz:18}
+    ].map(pt=>({...pt, style:`position:absolute;left:${pt.l}%;bottom:${pt.b}%;width:${pt.sz}px;height:${pt.sz}px;border-radius:50%;transform:translate(-50%,50%);background:${this.zoneColor(pt.zone)}cc;border:${pt.ring?'2.5px solid '+this.C.bad:'1.5px solid #fff'};box-shadow:${pt.ring?'0 0 0 4px '+this.C.bad+'33':'0 1px 3px rgba(0,0,0,0.2)'};cursor:pointer`}));
+
+    const topBest = [
+      {name:'ucmas / rèn não bộ', val:'98 N', zone:'green', sub:'thoát bậc 0: 50,4%'},
+      {name:'ucmas / content a tùng', val:'110 N', zone:'green', sub:'thoát bậc 0: 52,1%'},
+      {name:'uckid / khai giảng', val:'168 N', zone:'amber', sub:'thoát bậc 0: 46,2%'}
+    ].map(t=>({...t, dot:`display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;background:${this.zoneColor(t.zone)}`}));
+    const topBad = [
+      {name:'uckid / tư duy toán', val:'2,4 Tr', zone:'black', sub:'CPSQL 341 N · thoát 21,0%'},
+      {name:'ucmas / tuyển sinh hè', val:'2,4 Tr', zone:'red', sub:'bẫy số rẻ · thoát 18,2%'},
+      {name:'ucmas / quà tặng hè', val:'680 N', zone:'amber', sub:'CPSQL 172 N · đắt'}
+    ].map(t=>({...t, dot:`display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;background:${this.zoneColor(t.zone)}`}));
+
+    const trendBars = Array.from({length:30},(_,i)=>{
+      const h = 24 + Math.round(56*Math.abs(Math.sin(i*0.55+0.6))*0.7 + 14*((i%7)<5?1:0.4));
+      return { style:`flex:1;height:${Math.min(h,84)}px;background:oklch(0.55 0.13 250 / 0.35);border-radius:2px 2px 0 0` };
+    });
+    // svg line for cpsql over trend
+    const linePts = Array.from({length:30},(_,i)=>{
+      const y = 60 - 34*Math.abs(Math.sin(i*0.5+2))*0.8;
+      return `${(i/29*100).toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+
+    // ---- ALERTS ----
+    const alerts = [
+      {sev:'high', label:'BẪY SỐ RẺ', obj:'ucmas / mess / tuyển sinh hè · Rèn não bộ - Mở tư duy', over:'2,4 Tr đ',
+       ev:[['CPSQL','84 N','trung vị 117 N — rẻ hơn 28%','good'],['Tỷ lệ thoát bậc 0','18,2%','trung vị 48,1% — chỉ bằng 38%','bad']],
+       act:'Không tăng ngân sách. Quảng cáo này ra số rẻ nhưng gần như không có số nào đi tiếp. Soi lại creative và độ tuổi tệp.'},
+      {sev:'high', label:'ĐỐT TIỀN KHÔNG RA SỐ', obj:'uckid / mess / tư duy toán', over:'1,8 Tr đ',
+       ev:[['CPSQL','341 N','trung vị 117 N — đắt gấp 2,9 lần','bad'],['Tỷ lệ lấy số','24,7%','trung vị 33,2%','bad']],
+       act:'Tắt quảng cáo, dồn ngân sách sang nhóm 🟢. Cả CPSQL lẫn chất lượng đều tệ.'},
+      {sev:'medium', label:'CPR LEO THANG', obj:'ucmas / mess / quà tặng hè', over:'680 N đ',
+       ev:[['CPR','41,2 N','trung vị 38,9 N — cao hơn 6%','bad'],['Frequency','3,4','ngưỡng 3,0','bad']],
+       act:'Tệp bắt đầu bão hòa. Làm mới creative hoặc mở rộng tệp trong 3–5 ngày tới.'},
+      {sev:'low', label:'TỶ TRỌNG ORGANIC TĂNG', obj:'Toàn tài khoản uckid', over:'—',
+       ev:[['Organic','21,6%','kỳ trước 18,1%','neutral']],
+       act:'Theo dõi. Tỷ trọng organic tăng có thể làm nhiễu phân bổ số cho quảng cáo.'}
+    ].map(a=>({
+      ...a,
+      dotColor:{high:this.C.bad,medium:this.C.amber,low:this.C.blue}[a.sev],
+      sevLabel:{high:'Cao',medium:'Trung bình',low:'Thấp'}[a.sev],
+      ev: a.ev.map(e=>({label:e[0],value:e[1],ref:e[2],valStyle:`color:${dc(e[3])};font-weight:600`}))
+    }));
+    const alertFilters = [['all','Tất cả'],['high','🔴 Cao'],['medium','🟡 Trung bình'],['low','🔵 Thấp']]
+      .map(([id,label])=>({label,style:this.pillStyle(this.state.alertFilter===id),onClick:()=>this.setState({alertFilter:id})}));
+    const visAlerts = this.state.alertFilter==='all'?alerts:alerts.filter(a=>a.sev===this.state.alertFilter);
+
+    // ---- FUNNEL PAGE ----
+    const funnelBig = [
+      {label:'Tin nhắn', n:'1.240', w:100, rate:'100%', team:''},
+      {label:'→ SĐT (SQL)', n:'412', w:33, rate:'33,2%', team:'đội chat'},
+      {label:'→ Bậc 1+', n:'198', w:16, rate:'48,1%', team:'tư vấn'},
+      {label:'→ Bậc 2+', n:'87', w:7, rate:'43,9%', team:''},
+      {label:'→ Bậc 3+', n:'31', w:2.5, rate:'35,6%', team:''},
+      {label:'→ Bậc 4', n:'9', w:0.9, rate:'29,0%', team:''}
+    ].map(f=>({...f, barStyle:`height:26px;width:${Math.max(f.w,0.9)}%;min-width:3px;background:linear-gradient(90deg,oklch(0.55 0.13 250 / 0.85),oklch(0.6 0.13 250 / 0.55));border-radius:0 5px 5px 0`}));
+    const pickupByOwner = [
+      {name:'haitran',v:'38,1%',w:88},{name:'haicm',v:'35,4%',w:82},
+      {name:'linhpt',v:'29,7%',w:69},{name:'ngocanh',v:'22,4%',w:52}
+    ];
+    const health = [
+      {label:'Lead có gắn quảng cáo', v:'78,4%', w:78, prev:'kỳ trước 79,1%', warn:false},
+      {label:'Lead khớp được CRM', v:'12,6%', w:13, prev:'kỳ trước 12,2%', warn:true},
+      {label:'SĐT lỗi định dạng', v:'0,3%', w:3, prev:'', warn:false},
+      {label:'SĐT trùng', v:'4,1%', w:8, prev:'', warn:false}
+    ];
+
+    // ---- SYNC ----
+    const syncSources = [
+      {icon:'📊', name:'Quảng cáo', status:'ok', when:'09:14 hôm nay', rows:'1.240 dòng'},
+      {icon:'📞', name:'Lead', status:'ok', when:'09:14 hôm nay', rows:'2.418 dòng'},
+      {icon:'🎯', name:'Bậc CRM', status:'warn', when:'3 ngày trước', rows:'856 dòng'}
+    ].map(s=>({...s, dotColor:s.status==='ok'?this.C.good:this.C.amber, statusIcon:s.status==='ok'?'✅':'⚠️'}));
+    const syncHistory = [
+      ['24/07 09:14','Quảng cáo','Đồng bộ','1.240 dòng · 12 lỗi','42s','12'],
+      ['24/07 09:12','Lead','Đồng bộ','2.418 dòng · 3 lỗi','1m 08s','3'],
+      ['24/07 09:05','Bậc CRM','Chạy thử','856 dòng · 0 lỗi','18s','0'],
+      ['23/07 18:30','Tất cả','Đồng bộ','4.514 dòng · 21 lỗi','2m 14s','21']
+    ].map(r=>({time:r[0],src:r[1],mode:r[2],result:r[3],dur:r[4],err:r[5]}));
+
+    // ---- LEADS ----
+    const leadRows = [
+      {phone:'0912 445 118', name:'Chị Hương', date:'23/07', ad:'content a tùng', camp:'ucmas / tuyển sinh', rank:'2', crm:true, st:'Hợp lệ'},
+      {phone:'0987 002 431', name:'Anh Dũng', date:'23/07', ad:'', camp:'—', rank:'0', crm:false, st:'Hợp lệ', organic:true},
+      {phone:'0903 771 260', name:'Chị Mai', date:'22/07', ad:'rèn não bộ', camp:'ucmas / rèn não', rank:'1', crm:true, st:'Hợp lệ'},
+      {phone:'0938 114 907', name:'—', date:'22/07', ad:'quà tặng hè', camp:'ucmas / quà tặng', rank:'0', crm:false, st:'Trùng'},
+      {phone:'0977 320 845', name:'Anh Bình', date:'21/07', ad:'tư duy toán', camp:'uckid / tư duy', rank:'0', crm:false, st:'Hợp lệ'},
+      {phone:'0912 000 2', name:'—', date:'21/07', ad:'', camp:'—', rank:'0', crm:false, st:'Lỗi'}
+    ].map(l=>({
+      ...l,
+      rankStyle:`display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:${l.rank==='0'?'#eef0f3':l.rank<='2'?'oklch(0.72 0.15 75 / 0.16)':'oklch(0.62 0.13 155 / 0.16)'};color:${l.rank==='0'?this.C.muted:l.rank<='2'?this.C.amberD:this.C.goodD}`,
+      stStyle:`color:${l.st==='Hợp lệ'?this.C.muted:l.st==='Lỗi'?this.C.badD:this.C.amberD};font-size:12px`,
+      crmIcon: l.crm?'✔':'✘'
+    }));
+    const leadHead = ['SĐT','Tên khách','Ngày vào','Quảng cáo','Chiến dịch','Bậc','CRM','Trạng thái SĐT'];
+    const syncHead = ['Thời gian','Nguồn','Chế độ','Kết quả','Thời lượng','Lỗi'];
+    const settingsNav = [['ads','Quảng cáo',true],['leads','Lead',false],['crm','Bậc CRM',false],['general','Chung',false]]
+      .map(([id,label,active])=>({label, style:`padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:2px;font-weight:${active?600:500};background:${active?'#eef0f3':'transparent'};color:${active?this.C.ink:'#7c828c'}`}));
+    const fieldMap = [
+      {field:'Mã quảng cáo', req:true, col:'ad_id', proc:'Cắt khoảng', ok:'✔', valid:true},
+      {field:'SĐT', req:true, col:'SĐT phụ huynh', proc:'SĐT VN', ok:'✔', valid:true},
+      {field:'Ngày', req:true, col:'— chưa chọn —', proc:'Ngày d/m/y', ok:'⚠️', valid:false},
+      {field:'Tin nhắn', req:false, col:'Kết quả', proc:'Số VN', ok:'✔', valid:true}
+    ].map(m=>({...m, selStyle:`border:1px solid ${m.valid?'#d8dce2':'oklch(0.57 0.19 27)'};border-radius:7px;padding:6px 9px;color:${m.valid?this.C.ink:'oklch(0.47 0.17 27)'};background:${m.valid?'#fff':'oklch(0.57 0.19 27 / 0.05)'}`}));
+
+    return {
+      nav, datePresets, filters, levels, perfCols, perfRows,
+      leadHead, syncHead, settingsNav, fieldMap,
+      kpis, funnelH, matrixPts, topBest, topBad, trendBars, linePts,
+      alerts:visAlerts, alertFilters, alertFilter:this.state.alertFilter,
+      funnelBig, pickupByOwner, health, syncSources, syncHistory, leadRows,
+      showSmall: this.state.showSmall,
+      toggleSmall: ()=>this.setState(s=>({showSmall:!s.showSmall})),
+      closeDrawer: ()=>this.setState({drawer:null}),
+      isOverview:p==='overview', isPerformance:p==='performance', isFunnel:p==='funnel',
+      isAlerts:p==='alerts', isLeads:p==='leads', isSync:p==='sync', isSettings:p==='settings',
+      ...drawerVals
+    };
+  }
+}
+</script>
+</body>
+</html>
