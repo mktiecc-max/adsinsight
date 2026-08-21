@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { liveApiError } from "@/lib/api-response";
-import { getLivePerformance } from "@/lib/data/report-repository";
+import { liveApiError } from "@/lib/shared/api-response";
+import { getLivePerformance } from "@/lib/infrastructure/repositories/report-repository";
 import { detectAlerts } from "@/lib/domain/alerts";
-import { formatPercent, formatVnd } from "@/lib/format";
+import { formatPercent, formatVnd } from "@/lib/shared/format";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

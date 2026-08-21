@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { liveApiError } from "@/lib/api-response";
-import { getLivePerformance, type ReportLevel } from "@/lib/data/report-repository";
+import { liveApiError } from "@/lib/shared/api-response";
+import { getLivePerformance, type ReportLevel } from "@/lib/infrastructure/repositories/report-repository";
 
 const allowedLevels = new Set(["ad", "adset", "campaign", "creative", "owner", "brand"]);
 const allowedSorts = new Set([

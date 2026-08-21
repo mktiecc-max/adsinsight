@@ -1,4 +1,4 @@
-import { getLiveLeads } from "@/lib/data/report-repository";
+import { getLiveLeads } from "@/lib/infrastructure/repositories/report-repository";
 import { LeadsClient } from "./_components/leads.client";
 
 export default async function LeadsPage({

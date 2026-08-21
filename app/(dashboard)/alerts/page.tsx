@@ -1,6 +1,6 @@
-import { getLivePerformance } from "@/lib/data/report-repository";
+import { getLivePerformance } from "@/lib/infrastructure/repositories/report-repository";
 import { detectAlerts } from "@/lib/domain/alerts";
-import { formatPercent, formatVnd } from "@/lib/format";
+import { formatPercent, formatVnd } from "@/lib/shared/format";
 import { AlertsClient } from "./_components/alerts.client";
 
 export default async function AlertsPage({

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { liveApiError } from "@/lib/api-response";
+import { liveApiError } from "@/lib/shared/api-response";
 
 export async function GET(
   _request: Request,

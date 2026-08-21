@@ -10,8 +10,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { MetricValue, SectionHeading } from "@/components/ui";
-import { cn } from "@/lib/utils";
-import { getLivePerformance } from "@/lib/data/report-repository";
+import { cn } from "@/lib/shared/utils";
+import { getLivePerformance } from "@/lib/infrastructure/repositories/report-repository";
 
 export default async function FunnelPage({
   searchParams,

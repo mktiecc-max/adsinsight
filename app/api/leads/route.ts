@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { liveApiError } from "@/lib/api-response";
-import { getLiveLeads } from "@/lib/data/report-repository";
-import { normalizePhone } from "@/lib/format";
+import { liveApiError } from "@/lib/shared/api-response";
+import { getLiveLeads } from "@/lib/infrastructure/repositories/report-repository";
+import { normalizePhone } from "@/lib/shared/format";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

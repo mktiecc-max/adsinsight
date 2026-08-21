@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MetricValue } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared/utils";
 
 type RunState = {
   id: string;

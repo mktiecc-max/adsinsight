@@ -3,8 +3,8 @@
 import { Check, CheckCircle2, Clipboard, Download, Search, X, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RankBadge } from "@/components/ui";
-import { displayPhone, normalizePhone } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { displayPhone, normalizePhone } from "@/lib/shared/format";
+import { cn } from "@/lib/shared/utils";
 
 export function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   const [query, setQuery] = useState("");

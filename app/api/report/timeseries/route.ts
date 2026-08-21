@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { liveApiError } from "@/lib/api-response";
-import { getLiveTimeseries } from "@/lib/data/report-repository";
+import { liveApiError } from "@/lib/shared/api-response";
+import { getLiveTimeseries } from "@/lib/infrastructure/repositories/report-repository";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

@@ -1,4 +1,4 @@
-import { getLivePerformance } from "@/lib/data/report-repository";
+import { getLivePerformance } from "@/lib/infrastructure/repositories/report-repository";
 import { PerformanceClient } from "./_components/performance.client";
 
 export default async function PerformancePage({

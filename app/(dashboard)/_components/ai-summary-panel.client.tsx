@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared/utils";
 
 export function AiSummaryPanelClient() {
   const [aiGenerated, setAiGenerated] = useState(false);

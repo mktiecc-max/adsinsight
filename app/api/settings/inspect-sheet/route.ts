@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { liveApiError } from "@/lib/api-response";
-import { inspectSpreadsheet } from "@/lib/google-sheets";
+import { liveApiError } from "@/lib/shared/api-response";
+import { inspectSpreadsheet } from "@/lib/infrastructure/google-sheets";
 
 export async function POST(request: Request) {
   const body = await request.json();

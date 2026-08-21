@@ -26,8 +26,8 @@ import { useGlobalFilters } from "@/components/app-shell";
 import { MetricValue, SampleWarning, ZoneChip } from "@/components/ui";
 import { zoneMeta } from "@/lib/domain/matrix";
 import type { CalculatedPerformanceRow, Zone } from "@/lib/domain/types";
-import { formatCount, formatVnd } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { formatCount, formatVnd } from "@/lib/shared/format";
+import { cn } from "@/lib/shared/utils";
 
 const levels = [
   ["campaign", "Chiến dịch"],

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AlertCircle, BellOff, Check, Clock3, ExternalLink, Filter, Info } from "lucide-react";
 import { useState } from "react";
 import { MetricValue } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared/utils";
 
 const filters = [
   ["all", "Tất cả"],

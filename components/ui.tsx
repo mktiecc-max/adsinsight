@@ -1,8 +1,8 @@
 import { Info } from "lucide-react";
 import { zoneMeta } from "@/lib/domain/matrix";
 import type { Quality, Zone } from "@/lib/domain/types";
-import { formatCount, formatPercent, formatVnd } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { formatCount, formatPercent, formatVnd } from "@/lib/shared/format";
+import { cn } from "@/lib/shared/utils";
 
 export function MetricValue({
   value,
