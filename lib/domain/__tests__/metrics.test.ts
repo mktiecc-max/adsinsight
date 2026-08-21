@@ -23,7 +23,7 @@ describe("metrics", () => {
 
   describe("calculatePerformance", () => {
     it("calculates rates correctly and marks rankable", () => {
-      const row: PerformanceRow = {
+      const row: any = {
         spend: 1000000,
         impressions: 10000,
         clicks: 500,
@@ -46,7 +46,7 @@ describe("metrics", () => {
     });
 
     it("marks as not rankable if thresholds not met", () => {
-      const row: PerformanceRow = {
+      const row: any = {
         spend: 100000,
         impressions: 1000,
         clicks: 50,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/shared/api-response";
-import { saveLiveSource } from "@/lib/data/settings-repository";
+import { saveLiveSource } from "@/lib/infrastructure/repositories/settings-repository";
 
 type RouteContext = {
   params: Promise<{ code: string }>;

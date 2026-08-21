@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { calculatePerformance, median } from "@/lib/domain/metrics";
 import { classifyMatrix } from "@/lib/domain/matrix";
 import type { CalculatedPerformanceRow, PerformanceRow } from "@/lib/domain/types";
-import { createAdminClient, liveDataUnavailable } from "@/lib/supabase/admin";
+import { createAdminClient, liveDataUnavailable } from "@/lib/infrastructure/supabase/admin";
 import { unstable_cache } from "next/cache";
 
 export type ReportLevel = "ad" | "adset" | "campaign" | "creative" | "owner" | "brand";

@@ -36,7 +36,7 @@ export function AlertsClient({ initialAlerts }: { initialAlerts: any[] }) {
         </div>
         <div className="alerts-total">
           <span>Vượt chuẩn ước tính</span>
-          <MetricValue value={4_880_000} kind="money" />
+          <MetricValue value={rows.reduce((sum: number, a: any) => sum + (a.overspend || 0), 0)} kind="money" />
         </div>
       </div>
 

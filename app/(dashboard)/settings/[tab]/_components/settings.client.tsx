@@ -18,19 +18,48 @@ import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/shared/utils";
 
 const levelMap: any[] = [];
-const sourceSettings: any = {};
+const defaultSettings = {
+  ads: {
+    title: "Nguồn Quảng Cáo",
+    description: "Đồng bộ chi tiêu, messages, impressions hàng ngày từ Meta.",
+    link: "", tab: "",
+    fields: [
+      { target: "Mã quảng cáo", column: "", transform: "Không xử lý", required: true },
+      { target: "Tên chiến dịch", column: "", transform: "Không xử lý", required: true },
+      { target: "Ngày", column: "", transform: "Ngày ISO", required: true },
+      { target: "Chi tiêu", column: "", transform: "Không xử lý", required: true },
+      { target: "Tin nhắn", column: "", transform: "Không xử lý", required: true },
+    ]
+  },
+  leads: {
+    title: "Nguồn Lead",
+    description: "Khách đổ về từ POSCAKE hoặc Landing page.",
+    link: "", tab: "",
+    fields: [
+      { target: "SĐT", column: "", transform: "SĐT VN", required: true },
+      { target: "Tên khách", column: "", transform: "Không xử lý", required: false },
+      { target: "Ngày vào", column: "", transform: "Ngày ISO", required: true },
+      { target: "Mã quảng cáo", column: "", transform: "Không xử lý", required: false },
+    ]
+  },
+  crm: {
+    title: "Nguồn CRM",
+    description: "Cập nhật cấp bậc phễu sau của khách (Level UCMAS/UCKID).",
+    link: "", tab: "",
+    fields: [
+      { target: "SĐT", column: "", transform: "SĐT VN", required: true },
+      { target: "Level UCMAS", column: "", transform: "Quy đổi bậc", required: false },
+      { target: "Level UCKID", column: "", transform: "Quy đổi bậc", required: false },
+      { target: "Trung tâm", column: "", transform: "Không xử lý", required: false },
+    ]
+  }
+};
 
-const tabs = [
-  { id: "ads", label: "Quảng cáo", description: "Meta Ads" },
-  { id: "leads", label: "Lead", description: "POSCAKE" },
-  { id: "crm", label: "Bậc CRM", description: "Level & tư vấn" },
-  { id: "general", label: "Chung", description: "Ngưỡng & loại trừ" },
-];
 
 const targetFieldMap: Record<string, string> = {
   "Mã quảng cáo": "ad_id",
   "Tên chiến dịch": "campaign_name",
-  Ngày: "date",
+  "Ngày": "date",
   "Chi tiêu": "spend",
   "Tin nhắn": "messages",
   "Tên khách": "lead_name",
@@ -51,6 +80,21 @@ const transformMap: Record<string, string> = {
   "Quy đổi bậc": "value_map",
   "Không xử lý": "none",
 };
+
+const reverseTargetMap: Record<string, string> = Object.fromEntries(
+  Object.entries(targetFieldMap).map(([k, v]) => [v, k])
+);
+
+const reverseTransformMap: Record<string, string> = Object.fromEntries(
+  Object.entries(transformMap).map(([k, v]) => [v, k])
+);
+
+const tabs = [
+  { id: "ads", label: "Quảng cáo", description: "Meta Ads" },
+  { id: "leads", label: "Lead", description: "POSCAKE" },
+  { id: "crm", label: "Bậc CRM", description: "Level & tư vấn" },
+  { id: "general", label: "Chung", description: "Ngưỡng & loại trừ" },
+];
 
 function GeneralSettings() {
   const [saved, setSaved] = useState(false);
@@ -112,7 +156,7 @@ function GeneralSettings() {
   );
 }
 
-export function SettingsClient() {
+export function SettingsClient({ initialSources = [] }: { initialSources?: any[] }) {
   const params = useParams<{ tab: string }>();
   const tab = tabs.some((item) => item.id === params.tab) ? params.tab : "ads";
   const [inspected, setInspected] = useState(false);
@@ -126,7 +170,38 @@ export function SettingsClient() {
   const [previewRows, setPreviewRows] = useState<Array<Record<string, unknown>>>([]);
   const [dataMode, setDataMode] = useState<"demo" | "live" | "error">("demo");
   const [apiError, setApiError] = useState("");
-  const config = tab === "general" ? null : sourceSettings[tab as keyof typeof sourceSettings];
+
+  const config = useMemo(() => {
+    if (tab === "general") return null;
+    const base = defaultSettings[tab as keyof typeof defaultSettings];
+    if (!base) return null;
+
+    const sourceCode = tab === "ads" ? "ads_daily" : tab === "crm" ? "crm_levels" : "leads";
+    const liveSource = initialSources.find((s: any) => s.code === sourceCode);
+    
+    if (!liveSource) return base;
+
+    const mergedFields = base.fields.map(field => {
+      const targetCode = targetFieldMap[field.target];
+      const liveField = liveSource.fields?.find((f: any) => f.target_field === targetCode);
+      if (liveField) {
+        return {
+          ...field,
+          column: liveField.sheet_column || "",
+          transform: reverseTransformMap[liveField.transform] || "Không xử lý",
+          valid: true,
+        };
+      }
+      return field;
+    });
+
+    return {
+      ...base,
+      link: liveSource.spreadsheet_id || "",
+      tab: liveSource.sheet_tab || "",
+      fields: mergedFields,
+    };
+  }, [tab, initialSources]);
 
   useEffect(() => {
     setInspected(false);

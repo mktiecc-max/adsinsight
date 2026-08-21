@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/shared/api-response";
-import { getLiveSources, saveLiveSource } from "@/lib/data/settings-repository";
+import { getLiveSources, saveLiveSource } from "@/lib/infrastructure/repositories/settings-repository";
 
 export async function GET() {
   try {
