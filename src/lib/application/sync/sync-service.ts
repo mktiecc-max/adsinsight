@@ -77,32 +77,41 @@ export class SyncService {
           continue;
         }
 
-        // Upsert into corresponding table
-        let targetTable = "";
-        let onConflict = "";
-        
         if (source.code === "ads_daily") {
-          targetTable = "fact_ad_daily";
-          onConflict = "ad_id, date";
-        } else if (source.code === "leads") {
-          targetTable = "fact_lead";
-          onConflict = "phone";
-        } else if (source.code === "crm_levels") {
-          targetTable = "dim_customer";
-          onConflict = "phone";
-        }
-
-        if (targetTable) {
-          // Chunk data into 1000 rows to avoid Supabase limits
           const chunkSize = 1000;
           for (let i = 0; i < mappedData.length; i += chunkSize) {
             const chunk = mappedData.slice(i, i + chunkSize);
-            // Ignore constraints on missing fields just upsert what we have mapped
-            const { error: upsertError } = await supabase
-              .from(targetTable)
-              .upsert(chunk, { onConflict, ignoreDuplicates: false });
-              
-            if (upsertError) throw new Error("Lỗi upsert: " + upsertError.message);
+            
+            // 1. Upsert Dimensions
+            const dimAds = chunk.map(r => ({
+              ad_id: r.ad_id,
+              campaign_name: r.campaign_name || "Unknown"
+            }));
+            await supabase.from("dim_ad").upsert(dimAds, { onConflict: "ad_id", ignoreDuplicates: false });
+
+            // 2. Upsert Facts
+            const factAds = chunk.map(r => {
+              const fact: any = { ad_id: r.ad_id, date: r.date };
+              if (r.spend !== undefined) fact.spend = r.spend;
+              if (r.messages !== undefined) fact.messages = r.messages;
+              return fact;
+            });
+            const { error: upsertError } = await supabase.from("fact_ad_daily").upsert(factAds, { onConflict: "ad_id,date", ignoreDuplicates: false });
+            if (upsertError) throw new Error("Lỗi upsert fact_ad_daily: " + upsertError.message);
+          }
+        } else if (source.code === "leads") {
+          const chunkSize = 1000;
+          for (let i = 0; i < mappedData.length; i += chunkSize) {
+            const chunk = mappedData.slice(i, i + chunkSize);
+            const { error: upsertError } = await supabase.from("fact_lead").upsert(chunk, { onConflict: "phone", ignoreDuplicates: false });
+            if (upsertError) throw new Error("Lỗi upsert fact_lead: " + upsertError.message);
+          }
+        } else if (source.code === "crm_levels") {
+          const chunkSize = 1000;
+          for (let i = 0; i < mappedData.length; i += chunkSize) {
+            const chunk = mappedData.slice(i, i + chunkSize);
+            const { error: upsertError } = await supabase.from("dim_customer").upsert(chunk, { onConflict: "phone", ignoreDuplicates: false });
+            if (upsertError) throw new Error("Lỗi upsert dim_customer: " + upsertError.message);
           }
         }
 

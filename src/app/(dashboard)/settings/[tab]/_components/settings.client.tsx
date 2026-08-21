@@ -321,8 +321,14 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || "Lỗi không xác định");
       
-      const rows = payload.results?.[0]?.rows || 0;
-      setSyncResult(`Đã đồng bộ ${rows} dòng`);
+      const result = payload.results?.[0];
+      if (!result) {
+        setSyncResult("Không nhận được kết quả đồng bộ");
+      } else if (result.status === "error") {
+        setSyncResult(`Lỗi: ${result.message}`);
+      } else {
+        setSyncResult(`Đã đồng bộ ${result.rows || 0} dòng`);
+      }
     } catch(e) {
       setSyncResult(e instanceof Error ? `Lỗi: ${e.message}` : "Đồng bộ thất bại");
     } finally {
