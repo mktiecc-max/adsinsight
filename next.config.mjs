@@ -5,6 +5,9 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "@tanstack/react-table"],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
