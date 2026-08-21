@@ -70,7 +70,7 @@ export class SyncService {
       try {
         const rows = await fetchSheetData(source.spreadsheet_id, source.sheet_tab, source.header_row || 1);
         
-        const mappedData = rows.map(row => {
+        let mappedData = rows.map(row => {
           const record: Record<string, any> = {
             __sheet_row: row.__sheet_row
           };
@@ -136,40 +136,89 @@ export class SyncService {
             const { error: upsertError } = await supabase.from("fact_ad_daily").upsert(factAds, { onConflict: "ad_id,date", ignoreDuplicates: false });
             if (upsertError) throw new Error("Lỗi upsert fact_ad_daily: " + upsertError.message);
           }
+          
+          try {
+            await supabase.rpc('refresh_mv_ad_daily_enriched');
+          } catch (e) {
+            console.warn("Could not refresh MV, ensure RPC exists", e);
+          }
+          
         } else if (source.code === "leads") {
           const chunkSize = 1000;
-          const runId = crypto.randomUUID();
+          let newRows = 0;
           for (let i = 0; i < validData.length; i += chunkSize) {
             const chunk = validData.slice(i, i + chunkSize);
             const deduplicated = deduplicate(chunk, r => String(r.phone));
-            const toInsert = deduplicated.map(r => ({
-              run_id: runId,
-              sheet_row: r.__sheet_row,
-              phone_raw: r.phone,
-              lead_name: r.lead_name,
-              created_at: r.created_at,
-              ad_id: r.ad_id,
-            }));
-            const { error: insertError } = await supabase.from("stg_lead").insert(toInsert);
-            if (insertError) throw new Error("Lỗi insert stg_lead: " + insertError.message);
+            
+            // Lọc dữ liệu đã có
+            const phones = deduplicated.map(r => String(r.phone));
+            const { data: existing } = await supabase.from("fact_lead").select("phone").in("phone", phones);
+            const existingPhones = new Set(existing?.map(e => e.phone) || []);
+            
+            const toInsert = deduplicated
+              .filter(r => !existingPhones.has(String(r.phone)))
+              .map(r => ({
+                run_id: crypto.randomUUID(),
+                source_row_key: String(r.__sheet_row || ""),
+                phone: r.phone,
+                phone_raw: r.phone,
+                phone_status: String(r.phone).length >= 9 ? "valid" : "invalid",
+                lead_name: r.lead_name || "",
+                created_at: r.created_at || new Date().toISOString(),
+                ad_id: r.ad_id || "",
+                page_name: "",
+                is_first_touch: true
+              }));
+              
+            if (toInsert.length > 0) {
+              const { error: insertError } = await supabase.from("fact_lead").insert(toInsert);
+              if (insertError) throw new Error("Lỗi insert fact_lead: " + insertError.message);
+              newRows += toInsert.length;
+            }
           }
+          mappedData = mappedData.slice(0, newRows); // Cập nhật số dòng thực tế để báo cáo
+          
         } else if (source.code === "crm_levels") {
           const chunkSize = 1000;
-          const runId = crypto.randomUUID();
+          let newRows = 0;
           for (let i = 0; i < validData.length; i += chunkSize) {
             const chunk = validData.slice(i, i + chunkSize);
             const deduplicated = deduplicate(chunk, r => String(r.phone));
-            const toInsert = deduplicated.map(r => ({
-              run_id: runId,
-              sheet_row: r.__sheet_row,
-              phone_raw: r.phone,
-              level_ucmas_raw: r.level_ucmas_raw,
-              level_uckid_raw: r.level_uckid_raw,
-              center: r.center,
-            }));
-            const { error: insertError } = await supabase.from("stg_crm").insert(toInsert);
-            if (insertError) throw new Error("Lỗi insert stg_crm: " + insertError.message);
+            
+            // Lọc dữ liệu đã có
+            const phones = deduplicated.map(r => String(r.phone));
+            const { data: existing } = await supabase.from("dim_customer").select("phone").in("phone", phones);
+            const existingPhones = new Set(existing?.map(e => e.phone) || []);
+            
+            const toInsert = deduplicated
+              .filter(r => !existingPhones.has(String(r.phone)))
+              .map(r => {
+                const uckid = r.level_uckid_raw || "";
+                const ucmas = r.level_ucmas_raw || "";
+                let max_rank = 0;
+                if (uckid.includes("L0") || ucmas.includes("L0") || ucmas.includes("KG")) max_rank = 1;
+                if (uckid.includes("L1") || ucmas.includes("L1") || ucmas.includes("L2") || ucmas.includes("L3")) max_rank = 2;
+                if (uckid.includes("L2") || uckid.includes("L3") || ucmas.includes("L4") || ucmas.includes("L5") || ucmas.includes("L6") || ucmas.includes("L7")) max_rank = 3;
+                if (uckid.includes("L4") || uckid.includes("L5") || uckid.includes("L6") || ucmas.includes("L8") || ucmas.includes("L9") || ucmas.includes("L10")) max_rank = 4;
+                
+                return {
+                  phone: r.phone,
+                  max_rank,
+                  current_rank: max_rank,
+                  in_crm: true,
+                  crm_row_count: 1,
+                  center: r.center || "",
+                  updated_at: new Date().toISOString()
+                };
+              });
+              
+            if (toInsert.length > 0) {
+              const { error: insertError } = await supabase.from("dim_customer").insert(toInsert);
+              if (insertError) throw new Error("Lỗi insert dim_customer: " + insertError.message);
+              newRows += toInsert.length;
+            }
           }
+          mappedData = mappedData.slice(0, newRows); // Cập nhật số dòng thực tế để báo cáo
         }
 
         // Write success to sync_run
