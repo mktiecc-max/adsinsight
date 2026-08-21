@@ -37,6 +37,14 @@ function transformData(value: string, transform: string): any {
   }
 }
 
+function deduplicate<T>(arr: T[], keyFn: (item: T) => string): T[] {
+  const map = new Map<string, T>();
+  for (const item of arr) {
+    map.set(keyFn(item), item);
+  }
+  return Array.from(map.values());
+}
+
 export class SyncService {
   static async startSync(sourceCode?: string) {
     const supabase = createAdminClient();
@@ -94,7 +102,7 @@ export class SyncService {
             const chunk = validData.slice(i, i + chunkSize);
             
             // 1. Upsert Dimensions
-            const dimAds = chunk.map(r => {
+            let dimAds = chunk.map(r => {
               const campName = r.campaign_name || "Unknown";
               const parsed = parseCampaignName(campName);
               const brand = parsed.brand === "ucmas" || parsed.brand === "uckid" ? parsed.brand : "ucmas";
@@ -111,31 +119,35 @@ export class SyncService {
                 creative_key: r.creative_key || "Unknown"
               };
             });
+            dimAds = deduplicate(dimAds, r => String(r.ad_id));
             const { error: dimError } = await supabase.from("dim_ad").upsert(dimAds, { onConflict: "ad_id", ignoreDuplicates: false });
             if (dimError) throw new Error("Lỗi upsert dim_ad: " + dimError.message);
 
             // 2. Upsert Facts
-            const factAds = chunk.map(r => ({
+            let factAds = chunk.map(r => ({
               ad_id: r.ad_id,
               date: r.date,
               spend: Number(r.spend) || 0,
               messages: Number(r.messages) || 0,
             }));
+            factAds = deduplicate(factAds, r => `${r.ad_id}_${r.date}`);
             const { error: upsertError } = await supabase.from("fact_ad_daily").upsert(factAds, { onConflict: "ad_id,date", ignoreDuplicates: false });
             if (upsertError) throw new Error("Lỗi upsert fact_ad_daily: " + upsertError.message);
           }
         } else if (source.code === "leads") {
           const chunkSize = 1000;
-          for (let i = 0; i < mappedData.length; i += chunkSize) {
-            const chunk = mappedData.slice(i, i + chunkSize);
-            const { error: upsertError } = await supabase.from("fact_lead").upsert(chunk, { onConflict: "phone", ignoreDuplicates: false });
+          for (let i = 0; i < validData.length; i += chunkSize) {
+            const chunk = validData.slice(i, i + chunkSize);
+            const deduplicated = deduplicate(chunk, r => String(r.phone));
+            const { error: upsertError } = await supabase.from("fact_lead").upsert(deduplicated, { onConflict: "phone", ignoreDuplicates: false });
             if (upsertError) throw new Error("Lỗi upsert fact_lead: " + upsertError.message);
           }
         } else if (source.code === "crm_levels") {
           const chunkSize = 1000;
-          for (let i = 0; i < mappedData.length; i += chunkSize) {
-            const chunk = mappedData.slice(i, i + chunkSize);
-            const { error: upsertError } = await supabase.from("dim_customer").upsert(chunk, { onConflict: "phone", ignoreDuplicates: false });
+          for (let i = 0; i < validData.length; i += chunkSize) {
+            const chunk = validData.slice(i, i + chunkSize);
+            const deduplicated = deduplicate(chunk, r => String(r.phone));
+            const { error: upsertError } = await supabase.from("dim_customer").upsert(deduplicated, { onConflict: "phone", ignoreDuplicates: false });
             if (upsertError) throw new Error("Lỗi upsert dim_customer: " + upsertError.message);
           }
         }
