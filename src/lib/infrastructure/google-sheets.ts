@@ -25,6 +25,7 @@ function encodeBase64Url(input: string | Buffer) {
 }
 
 function readServiceAccount(): ServiceAccount | null {
+  const encoded = env.GOOGLE_SERVICE_ACCOUNT_B64;
   if (!encoded) {
     throw new Error("Thiếu biến môi trường GOOGLE_SERVICE_ACCOUNT_B64 trên Vercel.");
   }
