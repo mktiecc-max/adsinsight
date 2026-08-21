@@ -25,22 +25,11 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
-  if (!user && !isPublic) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  const isAdminPath = ADMIN_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
-  if (user && isAdminPath && user.app_metadata.role !== "admin") {
+  if (request.nextUrl.pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
+
+  // Removed authentication checks for personal use
 
   return response;
 }
