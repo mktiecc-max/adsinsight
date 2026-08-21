@@ -145,8 +145,8 @@ export class SyncService {
               created_at: r.created_at,
               ad_id: r.ad_id,
             }));
-            const { error: upsertError } = await supabase.from("stg_lead").upsert(toInsert, { onConflict: "phone_raw", ignoreDuplicates: false });
-            if (upsertError) throw new Error("Lỗi upsert stg_lead: " + upsertError.message);
+            const { error: insertError } = await supabase.from("stg_lead").insert(toInsert);
+            if (insertError) throw new Error("Lỗi insert stg_lead: " + insertError.message);
           }
         } else if (source.code === "crm_levels") {
           const chunkSize = 1000;
@@ -159,8 +159,8 @@ export class SyncService {
               level_uckid_raw: r.level_uckid_raw,
               center: r.center,
             }));
-            const { error: upsertError } = await supabase.from("stg_crm").upsert(toInsert, { onConflict: "phone_raw", ignoreDuplicates: false });
-            if (upsertError) throw new Error("Lỗi upsert stg_crm: " + upsertError.message);
+            const { error: insertError } = await supabase.from("stg_crm").insert(toInsert);
+            if (insertError) throw new Error("Lỗi insert stg_crm: " + insertError.message);
           }
         }
 
