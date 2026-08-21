@@ -15,8 +15,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { levelMap, sourceSettings } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+
+const levelMap: any[] = [];
+const sourceSettings: any = {};
 
 const tabs = [
   { id: "ads", label: "Quảng cáo", description: "Meta Ads" },
@@ -190,7 +192,7 @@ export default function SettingsPage() {
           sheet_tab: sheetTab,
           header_row: headerRow,
           enabled: true,
-          fields: config.fields.map((field, index) => ({
+          fields: config.fields.map((field: any, index: number) => ({
             target_field: targetFieldMap[field.target] || field.target.toLowerCase().replace(/\s+/g, "_"),
             sheet_column: field.column,
             transform: transformMap[field.transform] || "none",
@@ -249,9 +251,6 @@ export default function SettingsPage() {
                 {saved ? <Check size={14} /> : <Save size={14} />}
                 {saving ? "Đang lưu…" : saved ? "Đã lưu" : "Lưu cấu hình"}
               </button>
-              <span className={cn("data-mode-pill", `data-mode-${dataMode}`)}>
-                {dataMode === "live" ? "Dữ liệu thật" : dataMode === "error" ? "Lỗi kết nối" : "Dữ liệu demo"}
-              </span>
             </div>
 
             <section className="settings-section">
@@ -302,7 +301,7 @@ export default function SettingsPage() {
               </div>
               <div className="field-map-table">
                 <div className="field-map-head"><span>Trường chuẩn</span><span>Cột trong nguồn</span><span>Xử lý</span><span /></div>
-                {config.fields.map((field) => (
+                {config.fields.map((field: any) => (
                   <div className="field-map-row" key={field.target}>
                     <strong>{field.target}{field.required ? <i title="Bắt buộc" /> : null}</strong>
                     <select defaultValue={field.column}><option>{field.column}</option><option>— chưa chọn —</option>{previewHeaders.map((header) => <option key={header}>{header}</option>)}</select>

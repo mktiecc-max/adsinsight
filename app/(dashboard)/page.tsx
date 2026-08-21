@@ -23,7 +23,11 @@ import { MetricValue, SectionHeading, ZoneChip } from "@/components/ui";
 import { zoneMeta } from "@/lib/domain/matrix";
 import { sumPerformance } from "@/lib/domain/metrics";
 import type { CalculatedPerformanceRow } from "@/lib/domain/types";
-import { kpis, performanceRows, trendData } from "@/lib/mock-data";
+
+const kpis: any[] = [];
+const performanceRows: any[] = [];
+const trendData: any[] = [];
+
 import { cn } from "@/lib/utils";
 import { Delta } from "@/components/ui";
 
@@ -160,9 +164,7 @@ export default function OverviewPage() {
   return (
     <div className="page overview-page">
       <div className="overview-data-mode">
-        <span className={cn("data-mode-pill", `data-mode-${dataMode}`)}>
-          {dataMode === "live" ? "Dữ liệu thật" : dataMode === "error" ? "Lỗi nguồn dữ liệu" : "Dữ liệu demo"}
-        </span>
+
       </div>
       <div className="overview-alert">
         <div className="overview-alert-icon">

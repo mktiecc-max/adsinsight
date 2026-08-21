@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/api-response";
 import { getLivePerformance } from "@/lib/data/report-repository";
-import { brandLevels, dataHealth, funnelSteps, ownerCapture } from "@/lib/mock-data";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -11,10 +10,10 @@ export async function GET(request: Request) {
       to: url.searchParams.get("to"),
       level: "campaign",
     });
-    if (!live) {
+    if (!live || live.length === 0) {
       return NextResponse.json({
-        data: { steps: funnelSteps, capture_by_owner: ownerCapture, level_distribution: brandLevels, health: dataHealth },
-        meta: { mode: "demo" },
+        data: { steps: [], capture_by_owner: [], level_distribution: [], health: [] },
+        meta: { source: "live" },
       });
     }
 

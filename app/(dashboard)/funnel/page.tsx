@@ -13,12 +13,10 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MetricValue, SectionHeading } from "@/components/ui";
-import {
-  brandLevels,
-  dataHealth,
-  funnelSteps,
-  ownerCapture,
-} from "@/lib/mock-data";
+const funnelSteps: any[] = [];
+const ownerCapture: any[] = [];
+const brandLevels: any[] = [];
+const dataHealth: any[] = [];
 import { cn } from "@/lib/utils";
 
 export default function FunnelPage() {
@@ -65,9 +63,7 @@ export default function FunnelPage() {
           <ShieldCheck size={15} />
           Cohort bậc 3–4 còn <b className="num">38 ngày</b> để chín
         </div>
-        <span className={cn("data-mode-pill", `data-mode-${dataMode}`)}>
-          {dataMode === "live" ? "Dữ liệu thật" : dataMode === "error" ? "Lỗi nguồn dữ liệu" : "Dữ liệu demo"}
-        </span>
+
       </div>
 
       <section className="card big-funnel-card">

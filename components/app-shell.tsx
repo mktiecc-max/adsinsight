@@ -16,6 +16,7 @@ import {
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -40,16 +41,6 @@ export function useGlobalFilters() {
   if (!value) throw new Error("useGlobalFilters must be used inside AppShell");
   return value;
 }
-
-const navigation = [
-  { href: "/", label: "Tổng quan" },
-  { href: "/performance", label: "Hiệu suất" },
-  { href: "/funnel", label: "Phễu" },
-  { href: "/alerts", label: "Cảnh báo", badge: 3 },
-  { href: "/leads", label: "Lead" },
-  { href: "/sync", label: "Đồng bộ", admin: true },
-  { href: "/settings/ads", label: "Cài đặt", admin: true },
-];
 
 const presets = ["7 ngày", "30 ngày", "90 ngày", "Tháng này", "Tháng trước"];
 
@@ -84,6 +75,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [brand, setBrand] = useState("Tất cả");
   const [owner, setOwner] = useState("Tất cả");
   const [account, setAccount] = useState("Tất cả");
+  const [appState, setAppState] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => res.json())
+      .then((data) => setAppState(data.data))
+      .catch(() => {});
+  }, []);
 
   const context = useMemo(
     () => ({ preset, brand, owner, account, setPreset, setBrand, setOwner, setAccount }),
@@ -92,6 +91,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href.split("/").slice(0, 2).join("/"));
+
+  const navigation = [
+    { href: "/", label: "Tổng quan" },
+    { href: "/performance", label: "Hiệu suất" },
+    { href: "/funnel", label: "Phễu" },
+    { href: "/alerts", label: "Cảnh báo", badge: appState?.alerts_count },
+    { href: "/leads", label: "Lead" },
+    { href: "/sync", label: "Đồng bộ", admin: true },
+    { href: "/settings/ads", label: "Cài đặt", admin: true },
+  ];
 
   return (
     <FilterContext.Provider value={context}>
@@ -117,13 +126,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="header-actions">
-              <span className="period-label">Tháng 6/2026</span>
+              <span className="period-label">{appState?.period?.label || "Đang tải"}</span>
               <button className="icon-button notification-button" aria-label="Thông báo">
                 <Bell size={17} />
                 <span className="notification-dot" />
               </button>
-              <button className="avatar" title="Minh Khang · Admin">
-                MK
+              <button className="avatar" title={appState?.user?.name || "Tài khoản"}>
+                {appState?.user?.initials || "?"}
               </button>
               <button
                 className="icon-button mobile-menu-button"
@@ -154,7 +163,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="filter-bar">
             <button className="date-range-button">
               <CalendarDays size={15} />
-              <span className="num">01/06/2026 – 30/06/2026</span>
+              <span className="num">{appState?.period?.range || "Đang tải"}</span>
               <ChevronDown size={13} />
             </button>
 
@@ -192,7 +201,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               />
             </div>
 
-            <div className="filter-summary num">1.240 dòng · so với 01/05–31/05</div>
+            <div className="filter-summary num">
+              {appState ? `${appState.sync.total_rows.toLocaleString()} dòng · so với ${appState.period.compare}` : "..."}
+            </div>
           </div>
         </header>
 
@@ -202,9 +213,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="sync-status">
             <span className="status-pulse" />
             <span>Đồng bộ lần cuối:</span>
-            <strong className="num">24/07/2026 09:14</strong>
+            <strong className="num">{appState ? new Date(appState.sync.last_run).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" }) : "..."}</strong>
             <span className="footer-divider">·</span>
-            <span className="num">1.240 dòng</span>
+            <span className="num">{appState ? `${appState.sync.total_rows.toLocaleString()} dòng` : "..."}</span>
           </div>
           <Link href="/sync" className="footer-sync-link">
             <RefreshCw size={13} />

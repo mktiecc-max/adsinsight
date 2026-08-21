@@ -3,7 +3,6 @@ import { liveApiError } from "@/lib/api-response";
 import { getLivePerformance } from "@/lib/data/report-repository";
 import { detectAlerts } from "@/lib/domain/alerts";
 import { formatPercent, formatVnd } from "@/lib/format";
-import { alerts } from "@/lib/mock-data";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -37,15 +36,15 @@ export async function GET(request: Request) {
           })),
           action: alert.action,
         }))
-      : alerts;
+      : [];
     return NextResponse.json({
       data: detected,
       disabled_rules: [
-        { rule: "Bão hòa tệp", missing: live?.some((row) => row.frequency) ? [] : ["frequency"] },
+        { rule: "Bão hòa tệp", missing: live?.some((row: any) => row.frequency) ? [] : ["frequency"] },
         { rule: "Creative mòn", missing: live ? [] : ["impressions", "clicks", "frequency"] },
         { rule: "Đấu giá đắt lên", missing: live ? [] : ["impressions", "clicks"] },
       ],
-      meta: { mode: live ? "live" : "demo" },
+      meta: { source: "live" },
     });
   } catch (error) {
     return liveApiError(error);

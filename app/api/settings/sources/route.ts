@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/api-response";
 import { getLiveSources, saveLiveSource } from "@/lib/data/settings-repository";
-import { sourceSettings } from "@/lib/mock-data";
 
 export async function GET() {
   try {
     const live = await getLiveSources();
-    return NextResponse.json({ data: live || sourceSettings, meta: { mode: live ? "live" : "demo" } });
+    return NextResponse.json({ data: live || {}, meta: { source: "live" } });
   } catch (error) {
     return liveApiError(error);
   }
@@ -19,7 +18,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({
       data: live || payload,
       saved: true,
-      meta: { mode: live ? "live" : "demo" },
+      meta: { source: "live" },
     });
   } catch (error) {
     return liveApiError(error);

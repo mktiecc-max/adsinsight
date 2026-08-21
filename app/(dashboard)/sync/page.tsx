@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MetricValue } from "@/components/ui";
-import { syncHistory, syncSources } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+
+const syncHistory: any[] = [];
+const syncSources: any[] = [];
 
 type RunState = {
   id: string;

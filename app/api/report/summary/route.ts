@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/api-response";
 import { getLivePerformance } from "@/lib/data/report-repository";
-import { kpis, performanceRows } from "@/lib/mock-data";
 import { sumPerformance } from "@/lib/domain/metrics";
 
 export async function GET(request: Request) {
@@ -12,7 +11,7 @@ export async function GET(request: Request) {
       to: url.searchParams.get("to"),
       level: "campaign",
     });
-    const rows = liveRows || performanceRows;
+    const rows = liveRows || [];
     const totals = sumPerformance(rows);
     const liveKpis = [
       { key: "spend", label: "Chi tiêu", value: totals.spend, delta: 0, quality: "neutral", kind: "money" },
@@ -24,11 +23,11 @@ export async function GET(request: Request) {
     ];
     return NextResponse.json({
       data: {
-        kpis: liveRows ? liveKpis : kpis,
+        kpis: liveKpis,
         totals,
         compared_period: null,
       },
-      meta: { mode: liveRows ? "live" : "demo", updated_at: new Date().toISOString() },
+      meta: { source: "live", updated_at: new Date().toISOString() },
     });
   } catch (error) {
     return liveApiError(error);

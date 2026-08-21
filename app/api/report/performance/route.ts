@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/api-response";
 import { getLivePerformance, type ReportLevel } from "@/lib/data/report-repository";
-import { performanceRows } from "@/lib/mock-data";
 
 const allowedLevels = new Set(["ad", "adset", "campaign", "creative", "owner", "brand"]);
 const allowedSorts = new Set([
@@ -31,7 +30,7 @@ export async function GET(request: Request) {
       to: url.searchParams.get("to"),
       level,
     });
-    const sourceRows = liveRows || performanceRows;
+    const sourceRows = liveRows || [];
     const [sortKey, direction] = sort.split(":") as ["cpsql" | "spend" | "sql", "asc" | "desc"];
     const filtered = sourceRows
     .filter((row) => includeUnrankable || row.isRankable)
@@ -51,7 +50,7 @@ export async function GET(request: Request) {
         page: 1,
         page_size: 50,
         total: filtered.length,
-        mode: liveRows ? "live" : "demo",
+        source: "live",
       },
     });
   } catch (error) {

@@ -37,8 +37,11 @@ import {
 import { zoneMeta } from "@/lib/domain/matrix";
 import type { CalculatedPerformanceRow } from "@/lib/domain/types";
 import { formatCount, formatPercent, formatVnd } from "@/lib/format";
-import { leads, performanceRows, trendData } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+
+const performanceRows: any[] = [];
+const leads: any[] = [];
+const trendData: any[] = [];
 
 const levels = [
   ["campaign", "Chiến dịch"],
@@ -519,9 +522,7 @@ function PerformanceContent() {
             </button>
           ))}
         </div>
-        <span className={cn("data-mode-pill", `data-mode-${dataMode}`)}>
-          {dataMode === "live" ? "Dữ liệu thật" : dataMode === "error" ? "Lỗi nguồn dữ liệu" : "Dữ liệu demo"}
-        </span>
+
         <label className="small-sample-toggle">
           <input type="checkbox" checked={showSmall} onChange={(event) => setShowSmall(event.target.checked)} />
           <span>Hiện dòng cỡ mẫu nhỏ</span>

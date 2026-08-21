@@ -12,8 +12,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MetricValue } from "@/components/ui";
-import { alerts } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+
+const alerts: any[] = [];
 
 const filters = [
   ["all", "Tất cả"],
@@ -73,9 +74,6 @@ export default function AlertsPage() {
           <span>Vượt chuẩn ước tính</span>
           <MetricValue value={4_880_000} kind="money" />
         </div>
-        <span className={cn("data-mode-pill", `data-mode-${dataMode}`)}>
-          {dataMode === "live" ? "Dữ liệu thật" : dataMode === "error" ? "Lỗi nguồn dữ liệu" : "Dữ liệu demo"}
-        </span>
       </div>
 
       <div className="alert-filter-bar">
@@ -92,8 +90,8 @@ export default function AlertsPage() {
       </div>
 
       <div className="alert-list">
-        {visible.map((alert) => {
-          const meta = severityMeta[alert.severity];
+        {visible.map((alert: any) => {
+          const meta = severityMeta[alert.severity as keyof typeof severityMeta] || { label: "Khác", className: "" };
           const isSnoozed = snoozed.includes(alert.id);
           return (
             <article
@@ -114,7 +112,7 @@ export default function AlertsPage() {
               <div className="alert-object">{alert.object}</div>
 
               <div className="alert-evidence">
-                {alert.evidence.map((evidence) => (
+                {alert.evidence.map((evidence: any) => (
                   <div key={evidence.label}>
                     <span>{evidence.label}</span>
                     <b className={cn("num", `metric-${evidence.quality === "good" ? "positive" : evidence.quality === "bad" ? "negative" : "neutral"}`)}>

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/api-response";
 import { getLiveLeads } from "@/lib/data/report-repository";
 import { normalizePhone } from "@/lib/format";
-import { leads } from "@/lib/mock-data";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -13,12 +12,12 @@ export async function GET(request: Request) {
       from: url.searchParams.get("from"),
       to: url.searchParams.get("to"),
     });
-    const data = (live || leads).filter((lead) => {
+    const data = (live || []).filter((lead) => {
       if (!query) return true;
       if (phone && lead.phone.includes(phone)) return true;
       return `${lead.name} ${lead.ad} ${lead.campaign} ${lead.page}`.toLowerCase().includes(query);
     });
-    return NextResponse.json({ data, meta: { total: data.length, mode: live ? "live" : "demo" } });
+    return NextResponse.json({ data, meta: { total: data.length, source: "live" } });
   } catch (error) {
     return liveApiError(error);
   }

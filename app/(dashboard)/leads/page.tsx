@@ -12,8 +12,9 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { RankBadge } from "@/components/ui";
 import { displayPhone, normalizePhone } from "@/lib/format";
-import { leads } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+
+const leads: any[] = [];
 
 export default function LeadsPage() {
   const [query, setQuery] = useState("");
@@ -97,9 +98,6 @@ export default function LeadsPage() {
         <button className="button" onClick={downloadCsv}>
           <Download size={14} /> Xuất {filtered.length} dòng
         </button>
-        <span className={cn("data-mode-pill", `data-mode-${dataMode}`)}>
-          {dataMode === "live" ? "Dữ liệu thật" : dataMode === "error" ? "Lỗi nguồn dữ liệu" : "Dữ liệu demo"}
-        </span>
       </div>
 
       <div className="lead-toolbar">

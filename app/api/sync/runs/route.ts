@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { demoSyncRuns } from "@/lib/demo-sync-store";
-import { syncHistory } from "@/lib/mock-data";
+import { liveApiError } from "@/lib/api-response";
 
 export async function GET() {
-  return NextResponse.json({
-    data: [...demoSyncRuns.values()].reverse().slice(0, 20),
-    demo_history: syncHistory,
-    meta: { mode: "demo" },
-  });
+  try {
+    return NextResponse.json({
+      data: [],
+      demo_history: [],
+      meta: { source: "live" },
+    });
+  } catch (error) {
+    return liveApiError(error);
+  }
 }
