@@ -167,6 +167,7 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
   const [sheetTab, setSheetTab] = useState("");
   const [headerRow, setHeaderRow] = useState(1);
   const [liveHeaders, setLiveHeaders] = useState<string[] | null>(null);
+  const [liveTabs, setLiveTabs] = useState<{ title: string; row_count: number }[] | null>(null);
   const [previewRows, setPreviewRows] = useState<Array<Record<string, unknown>>>([]);
   const [dataMode, setDataMode] = useState<"demo" | "live" | "error">("demo");
   const [apiError, setApiError] = useState("");
@@ -209,6 +210,7 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
     setAutomapped(false);
     setApiError("");
     setLiveHeaders(null);
+    setLiveTabs(null);
     setPreviewRows([]);
     if (config) {
       setSourceLink(config.link);
@@ -243,6 +245,7 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Không đọc được Google Sheet.");
       setLiveHeaders(payload.data.headers);
+      setLiveTabs(payload.data.tabs || null);
       setPreviewRows(payload.data.preview || []);
       setDataMode(payload.meta.mode);
       setInspected(true);
@@ -340,7 +343,18 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
                 </label>
                 <label>
                   <span>Tab</span>
-                  <div className="select-like"><FileSpreadsheet size={14} /><select value={sheetTab} onChange={(event) => setSheetTab(event.target.value)}><option>{config.tab}</option><option>Dữ liệu tháng 7</option></select><ChevronDown size={13} /></div>
+                  <div className="select-like">
+                    <FileSpreadsheet size={14} />
+                    <select value={sheetTab} onChange={(event) => { setSheetTab(event.target.value); setInspected(false); }}>
+                      <option value="">— Tab đầu tiên —</option>
+                      {liveTabs ? liveTabs.map((t) => (
+                        <option key={t.title} value={t.title}>{t.title} ({t.row_count} dòng)</option>
+                      )) : (
+                        config.tab ? <option value={config.tab}>{config.tab}</option> : null
+                      )}
+                    </select>
+                    <ChevronDown size={13} />
+                  </div>
                 </label>
                 <label>
                   <span>Dòng tiêu đề</span>
