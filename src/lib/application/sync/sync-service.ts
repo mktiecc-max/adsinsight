@@ -139,16 +139,16 @@ export class SyncService {
           for (let i = 0; i < validData.length; i += chunkSize) {
             const chunk = validData.slice(i, i + chunkSize);
             const deduplicated = deduplicate(chunk, r => String(r.phone));
-            const { error: upsertError } = await supabase.from("fact_lead").upsert(deduplicated, { onConflict: "phone", ignoreDuplicates: false });
-            if (upsertError) throw new Error("Lỗi upsert fact_lead: " + upsertError.message);
+            const { error: upsertError } = await supabase.from("stg_lead").upsert(deduplicated, { onConflict: "phone", ignoreDuplicates: false });
+            if (upsertError) throw new Error("Lỗi upsert stg_lead: " + upsertError.message);
           }
         } else if (source.code === "crm_levels") {
           const chunkSize = 1000;
           for (let i = 0; i < validData.length; i += chunkSize) {
             const chunk = validData.slice(i, i + chunkSize);
             const deduplicated = deduplicate(chunk, r => String(r.phone));
-            const { error: upsertError } = await supabase.from("dim_customer").upsert(deduplicated, { onConflict: "phone", ignoreDuplicates: false });
-            if (upsertError) throw new Error("Lỗi upsert dim_customer: " + upsertError.message);
+            const { error: upsertError } = await supabase.from("stg_crm").upsert(deduplicated, { onConflict: "phone", ignoreDuplicates: false });
+            if (upsertError) throw new Error("Lỗi upsert stg_crm: " + upsertError.message);
           }
         }
 
