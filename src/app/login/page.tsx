@@ -20,16 +20,18 @@ export default function LoginPage() {
     }
     const url = env.SUPABASE_URL;
     const key = env.SUPABASE_ANON_KEY;
-    if (url && key) {
-      const supabase = createBrowserClient(url, key);
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
+    if (!url || !key) {
+      setError("Hệ thống chưa được cấu hình (Thiếu biến môi trường NEXT_PUBLIC_SUPABASE_URL hoặc NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).");
+      return;
+    }
+    const supabase = createBrowserClient(url, key);
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (authError) {
+      setError(authError.message);
+      return;
     }
     setSent(true);
   };
@@ -64,7 +66,6 @@ export default function LoginPage() {
               <h2>Kiểm tra hộp thư</h2>
               <p>Đường dẫn đăng nhập đã được gửi tới <b>{email}</b>.</p>
               <button className="button" onClick={() => setSent(false)}>Dùng email khác</button>
-              <Link href="/" className="demo-link">Tiếp tục vào bản demo <ArrowRight size={13} /></Link>
             </div>
           ) : (
             <>
@@ -81,12 +82,6 @@ export default function LoginPage() {
                   Gửi magic link <ArrowRight size={14} />
                 </button>
               </form>
-              {!env.SUPABASE_URL ? (
-                <div className="demo-notice">
-                  Đang chạy chế độ demo. Magic link sẽ được mô phỏng vì chưa có biến môi trường Supabase.
-                </div>
-              ) : null}
-              <Link href="/" className="demo-link">Vào thẳng bản demo <ArrowRight size={13} /></Link>
             </>
           )}
         </div>
