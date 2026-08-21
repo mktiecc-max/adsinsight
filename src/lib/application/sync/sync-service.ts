@@ -77,17 +77,35 @@ export class SyncService {
           continue;
         }
 
+        let validData = mappedData;
+        if (source.code === "ads_daily") validData = validData.filter(r => r.ad_id && r.date);
+        else if (source.code === "leads") validData = validData.filter(r => r.phone);
+        else if (source.code === "crm_levels") validData = validData.filter(r => r.phone);
+
+        if (validData.length === 0) {
+          results.push({ code: source.code, status: "success", rows: 0, message: "Không có dữ liệu hợp lệ (thiếu ID)" });
+          continue;
+        }
+
         if (source.code === "ads_daily") {
           const chunkSize = 1000;
-          for (let i = 0; i < mappedData.length; i += chunkSize) {
-            const chunk = mappedData.slice(i, i + chunkSize);
+          for (let i = 0; i < validData.length; i += chunkSize) {
+            const chunk = validData.slice(i, i + chunkSize);
             
             // 1. Upsert Dimensions
             const dimAds = chunk.map(r => ({
               ad_id: r.ad_id,
-              campaign_name: r.campaign_name || "Unknown"
+              campaign_name: r.campaign_name || "Unknown",
+              owner: r.owner || "Unknown",
+              brand: r.brand || "Unknown",
+              objective: r.objective || "Unknown",
+              account_id: r.account_id || "Unknown",
+              adset_name: r.adset_name || "Unknown",
+              ad_name: r.ad_name || "Unknown",
+              creative_key: r.creative_key || "Unknown"
             }));
-            await supabase.from("dim_ad").upsert(dimAds, { onConflict: "ad_id", ignoreDuplicates: false });
+            const { error: dimError } = await supabase.from("dim_ad").upsert(dimAds, { onConflict: "ad_id", ignoreDuplicates: false });
+            if (dimError) throw new Error("Lỗi upsert dim_ad: " + dimError.message);
 
             // 2. Upsert Facts
             const factAds = chunk.map(r => ({
