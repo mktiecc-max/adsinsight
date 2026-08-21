@@ -19,9 +19,12 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/shared/utils";
+import { getPresetRange, formatDateVN } from "@/lib/shared/date-utils";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type FilterState = {
   preset: string;
@@ -70,12 +73,84 @@ function SelectFilter({
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [mobileOpen, setMobileOpen] = useState(false);
   const [preset, setPreset] = useState("30 ngày");
   const [brand, setBrand] = useState("Tất cả");
   const [owner, setOwner] = useState("Tất cả");
   const [account, setAccount] = useState("Tất cả");
   const [appState, setAppState] = useState<any>(null);
+  
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const datePickerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setShowDatePicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    if (from && to) {
+      setCustomFrom(from);
+      setCustomTo(to);
+      // Try to match a preset
+      let matchedPreset = "";
+      for (const p of presets) {
+        const range = getPresetRange(p);
+        if (range.from === from && range.to === to) {
+          matchedPreset = p;
+          break;
+        }
+      }
+      setPreset(matchedPreset || "Tuỳ chỉnh");
+    } else {
+      // Default behavior
+      const defaultRange = getPresetRange("30 ngày");
+      if (pathname !== "/sync") {
+        router.replace(`?from=${defaultRange.from}&to=${defaultRange.to}`);
+      }
+      setPreset("30 ngày");
+    }
+  }, [searchParams, pathname, router]);
+
+  const handleApplyPreset = (p: string) => {
+    setPreset(p);
+    const range = getPresetRange(p);
+    if (range.from && range.to) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("from", range.from);
+      params.set("to", range.to);
+      router.push(`?${params.toString()}`);
+    }
+  };
+
+  const handleApplyCustomDate = () => {
+    if (customFrom && customTo) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("from", customFrom);
+      params.set("to", customTo);
+      router.push(`?${params.toString()}`);
+      setShowDatePicker(false);
+    }
+  };
+
+  const displayRange = useMemo(() => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    if (from && to) return `${formatDateVN(from)} - ${formatDateVN(to)}`;
+    return "Đang tải";
+  }, [searchParams]);
 
   useEffect(() => {
     fetch("/api/me")
@@ -161,18 +236,52 @@ export function AppShell({ children }: { children: ReactNode }) {
           ) : null}
 
           <div className="filter-bar">
-            <button className="date-range-button">
-              <CalendarDays size={15} />
-              <span className="num">{appState?.period?.range || "Đang tải"}</span>
-              <ChevronDown size={13} />
-            </button>
+            <div className="relative" ref={datePickerRef}>
+              <button 
+                className="date-range-button" 
+                onClick={() => setShowDatePicker(!showDatePicker)}
+              >
+                <CalendarDays size={15} />
+                <span className="num">{displayRange}</span>
+                <ChevronDown size={13} />
+              </button>
+              
+              {showDatePicker && (
+                <div className="absolute top-full left-0 mt-2 p-4 bg-white border shadow-lg rounded-lg z-50 flex flex-col gap-3 min-w-[280px]">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-gray-500">Từ ngày</label>
+                    <input 
+                      type="date" 
+                      className="border rounded p-2 text-sm"
+                      value={customFrom}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-gray-500">Đến ngày</label>
+                    <input 
+                      type="date" 
+                      className="border rounded p-2 text-sm"
+                      value={customTo}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                    />
+                  </div>
+                  <button 
+                    className="mt-2 bg-blue-600 text-white rounded p-2 text-sm font-semibold hover:bg-blue-700"
+                    onClick={handleApplyCustomDate}
+                  >
+                    Áp dụng
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="preset-group" aria-label="Mốc ngày nhanh">
               {presets.map((item) => (
                 <button
                   key={item}
                   className={cn("preset-button", preset === item && "active")}
-                  onClick={() => setPreset(item)}
+                  onClick={() => handleApplyPreset(item)}
                 >
                   {item}
                 </button>
