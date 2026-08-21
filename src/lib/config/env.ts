@@ -1,6 +1,6 @@
 export const env = {
   get SUPABASE_URL() {
-    const val = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const val = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
     if (!val && process.env.NODE_ENV !== "test") {
       console.warn("Thiếu biến môi trường NEXT_PUBLIC_SUPABASE_URL");
     }
@@ -14,7 +14,7 @@ export const env = {
     return val || "";
   },
   get SUPABASE_SERVICE_KEY() {
-    const val = process.env.SUPABASE_SECRET_KEY;
+    const val = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!val && process.env.NODE_ENV !== "test" && process.env.ADSINSIGHT_DATA_MODE === "live") {
       console.warn("Thiếu biến môi trường SUPABASE_SECRET_KEY trong chế độ live");
     }
@@ -30,8 +30,8 @@ export const env = {
     if (process.env.ADSINSIGHT_DATA_MODE === "demo") return false;
     if (process.env.ADSINSIGHT_DATA_MODE === "live") return true;
     return Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL && 
-      process.env.SUPABASE_SECRET_KEY && 
+      (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL) && 
+      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY) && 
       process.env.GOOGLE_SERVICE_ACCOUNT_B64
     );
   },
