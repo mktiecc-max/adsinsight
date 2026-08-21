@@ -170,6 +170,9 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
   const [liveTabs, setLiveTabs] = useState<{ title: string; row_count: number }[] | null>(null);
   const [previewRows, setPreviewRows] = useState<Array<Record<string, unknown>>>([]);
   const [apiError, setApiError] = useState("");
+  const [fieldMappings, setFieldMappings] = useState<Record<string, { column: string, transform: string }>>({});
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState("");
 
   const config = useMemo(() => {
     if (tab === "general") return null;
@@ -215,6 +218,12 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
       setSourceLink(config.link);
       setSheetTab(config.tab);
       setHeaderRow(1);
+      
+      const initial: Record<string, { column: string, transform: string }> = {};
+      config.fields.forEach((f: any) => {
+        initial[f.target] = { column: f.column || "", transform: f.transform || "Không xử lý" };
+      });
+      setFieldMappings(initial);
     }
   }, [tab, config]);
 
@@ -260,8 +269,8 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
           enabled: true,
           fields: config.fields.map((field: any, index: number) => ({
             target_field: targetFieldMap[field.target] || field.target.toLowerCase().replace(/\s+/g, "_"),
-            sheet_column: field.column,
-            transform: transformMap[field.transform] || "none",
+            sheet_column: fieldMappings[field.target]?.column || "",
+            transform: transformMap[fieldMappings[field.target]?.transform || field.transform] || "none",
             is_required: field.required,
             sort_order: index,
           })),
@@ -275,6 +284,42 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
       setApiError(error instanceof Error ? error.message : "Không lưu được cấu hình.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAutomap = () => {
+    const newMappings = { ...fieldMappings };
+    config?.fields.forEach((field: any) => {
+      const targetLower = field.target.toLowerCase();
+      const match = previewHeaders.find(h => {
+        const hLower = h.toLowerCase();
+        return hLower.includes(targetLower) || targetLower.includes(hLower) ||
+          (targetLower === "mã quảng cáo" && hLower.includes("ad")) ||
+          (targetLower === "tên chiến dịch" && hLower.includes("campaign")) ||
+          (targetLower === "chi tiêu" && (hLower.includes("spend") || hLower.includes("số tiền đã chi tiêu"))) ||
+          (targetLower === "tin nhắn" && (hLower.includes("message") || hLower.includes("kết nối mới")));
+      });
+      if (match && !newMappings[field.target]?.column) {
+        newMappings[field.target] = { ...newMappings[field.target], column: match };
+      }
+    });
+    setFieldMappings(newMappings);
+    setAutomapped(true);
+    window.setTimeout(() => setAutomapped(false), 2000);
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncResult("");
+    try {
+      const res = await fetch("/api/sync/start", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setSyncResult("Đã bắt đầu đồng bộ");
+    } catch(e) {
+      setSyncResult("Đồng bộ thất bại");
+    } finally {
+      setSyncing(false);
+      window.setTimeout(() => setSyncResult(""), 3000);
     }
   };
 
@@ -376,8 +421,8 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
               <div className="settings-section-head">
                 <span className="section-number">02</span>
                 <div><h2>Ánh xạ trường</h2><p>Tên cột nguồn không được hardcode trong ứng dụng.</p></div>
-                <button className="button button-small" onClick={() => setAutomapped(true)}>
-                  <Sparkles size={13} /> {automapped ? "Đã khớp 100%" : "Tự động khớp"}
+                <button className="button button-small" onClick={handleAutomap}>
+                  <Sparkles size={13} /> {automapped ? "Đã khớp xong" : "Tự động khớp"}
                 </button>
               </div>
               <div className="field-map-table">
@@ -385,9 +430,25 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
                 {config.fields.map((field: any) => (
                   <div className="field-map-row" key={field.target}>
                     <strong>{field.target}{field.required ? <i title="Bắt buộc" /> : null}</strong>
-                    <select defaultValue={field.column}><option>{field.column}</option><option>— chưa chọn —</option>{previewHeaders.map((header) => <option key={header}>{header}</option>)}</select>
-                    <select defaultValue={field.transform}><option>{field.transform}</option><option>Không xử lý</option><option>Số VN</option><option>SĐT VN</option></select>
-                    <span className={field.valid ? "map-valid" : "map-invalid"}>{field.valid ? <Check size={14} /> : <AlertTriangle size={14} />}</span>
+                    <select 
+                      value={fieldMappings[field.target]?.column || ""}
+                      onChange={(e) => setFieldMappings(prev => ({ ...prev, [field.target]: { ...prev[field.target], column: e.target.value } }))}
+                    >
+                      <option value="">— chưa chọn —</option>
+                      {previewHeaders.map((header) => <option key={header} value={header}>{header}</option>)}
+                      {!previewHeaders.includes(fieldMappings[field.target]?.column) && fieldMappings[field.target]?.column && (
+                         <option value={fieldMappings[field.target]?.column}>{fieldMappings[field.target]?.column}</option>
+                      )}
+                    </select>
+                    <select 
+                      value={fieldMappings[field.target]?.transform || "Không xử lý"}
+                      onChange={(e) => setFieldMappings(prev => ({ ...prev, [field.target]: { ...prev[field.target], transform: e.target.value } }))}
+                    >
+                      {Object.keys(transformMap).map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <span className={fieldMappings[field.target]?.column ? "map-valid" : "map-invalid"}>
+                      {fieldMappings[field.target]?.column ? <Check size={14} /> : <AlertTriangle size={14} />}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -419,7 +480,10 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
               </div>
               <div className="settings-sync-actions">
                 <button className="button"><Beaker size={14} /> Chạy thử nguồn này</button>
-                <button className="button button-primary"><Database size={14} /> Đồng bộ nguồn này</button>
+                <button className="button button-primary" onClick={handleSync} disabled={syncing}>
+                  {syncing ? <Database size={14} className="animate-spin" /> : <Database size={14} />}
+                  {syncing ? "Đang đồng bộ..." : syncResult || "Đồng bộ nguồn này"}
+                </button>
               </div>
             </section>
           </div>
