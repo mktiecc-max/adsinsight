@@ -154,10 +154,10 @@
 .filter-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 9px;
   min-height: 50px;
   padding: 8px 22px;
-  overflow-x: auto;
   border-top: 1px solid #f0f1f3;
   background: #fbfbfc;
 }
