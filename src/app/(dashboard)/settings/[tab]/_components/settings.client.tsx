@@ -313,13 +313,14 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
     setSyncResult("");
     try {
       const res = await fetch("/api/sync/start", { method: "POST" });
-      if (!res.ok) throw new Error();
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || "Lỗi không xác định");
       setSyncResult("Đã bắt đầu đồng bộ");
     } catch(e) {
-      setSyncResult("Đồng bộ thất bại");
+      setSyncResult(e instanceof Error ? `Lỗi: ${e.message}` : "Đồng bộ thất bại");
     } finally {
       setSyncing(false);
-      window.setTimeout(() => setSyncResult(""), 3000);
+      window.setTimeout(() => setSyncResult(""), 4000);
     }
   };
 
@@ -427,30 +428,47 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
               </div>
               <div className="field-map-table">
                 <div className="field-map-head"><span>Trường chuẩn</span><span>Cột trong nguồn</span><span>Xử lý</span><span /></div>
-                {config.fields.map((field: any) => (
-                  <div className="field-map-row" key={field.target}>
-                    <strong>{field.target}{field.required ? <i title="Bắt buộc" /> : null}</strong>
-                    <select 
-                      value={fieldMappings[field.target]?.column || ""}
-                      onChange={(e) => setFieldMappings(prev => ({ ...prev, [field.target]: { ...prev[field.target], column: e.target.value } }))}
-                    >
-                      <option value="">— chưa chọn —</option>
-                      {previewHeaders.map((header) => <option key={header} value={header}>{header}</option>)}
-                      {!previewHeaders.includes(fieldMappings[field.target]?.column) && fieldMappings[field.target]?.column && (
-                         <option value={fieldMappings[field.target]?.column}>{fieldMappings[field.target]?.column}</option>
-                      )}
-                    </select>
-                    <select 
-                      value={fieldMappings[field.target]?.transform || "Không xử lý"}
-                      onChange={(e) => setFieldMappings(prev => ({ ...prev, [field.target]: { ...prev[field.target], transform: e.target.value } }))}
-                    >
-                      {Object.keys(transformMap).map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <span className={fieldMappings[field.target]?.column ? "map-valid" : "map-invalid"}>
-                      {fieldMappings[field.target]?.column ? <Check size={14} /> : <AlertTriangle size={14} />}
-                    </span>
-                  </div>
-                ))}
+                {config.fields.map((field: any) => {
+                  const mappedCol = fieldMappings[field.target]?.column;
+                  const sampleValues = mappedCol && previewRows.length > 0 
+                    ? previewRows.map(r => r[mappedCol]).filter(v => v !== undefined && String(v).trim() !== "").slice(0, 2).join(", ")
+                    : "";
+
+                  return (
+                    <div key={field.target} style={{ borderTop: "1px solid var(--line)" }}>
+                      <div className="field-map-row" style={{ borderTop: "none", minHeight: sampleValues ? "36px" : "43px" }}>
+                        <strong>{field.target}{field.required ? <i title="Bắt buộc" /> : null}</strong>
+                        <select 
+                          value={fieldMappings[field.target]?.column || ""}
+                          onChange={(e) => setFieldMappings(prev => ({ ...prev, [field.target]: { ...prev[field.target], column: e.target.value } }))}
+                        >
+                          <option value="">— chưa chọn —</option>
+                          {previewHeaders.map((header) => <option key={header} value={header}>{header}</option>)}
+                          {!previewHeaders.includes(fieldMappings[field.target]?.column) && fieldMappings[field.target]?.column && (
+                            <option value={fieldMappings[field.target]?.column}>{fieldMappings[field.target]?.column}</option>
+                          )}
+                        </select>
+                        <select 
+                          value={fieldMappings[field.target]?.transform || "Không xử lý"}
+                          onChange={(e) => setFieldMappings(prev => ({ ...prev, [field.target]: { ...prev[field.target], transform: e.target.value } }))}
+                        >
+                          {Object.keys(transformMap).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <span className={fieldMappings[field.target]?.column ? "map-valid" : "map-invalid"}>
+                          {fieldMappings[field.target]?.column ? <Check size={14} /> : <AlertTriangle size={14} />}
+                        </span>
+                      </div>
+                      {sampleValues ? (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1fr 28px", gap: "9px", padding: "0 7px 10px" }}>
+                          <div />
+                          <div style={{ color: "var(--muted)", fontSize: "9px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            VD: {sampleValues}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
