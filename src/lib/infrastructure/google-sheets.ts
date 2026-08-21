@@ -25,11 +25,9 @@ function encodeBase64Url(input: string | Buffer) {
 }
 
 function readServiceAccount(): ServiceAccount | null {
-  const encoded = env.GOOGLE_SERVICE_ACCOUNT_B64;
-  if (env.IS_LIVE && !encoded) {
-    throw new Error("ADSINSIGHT_DATA_MODE=live nhưng thiếu GOOGLE_SERVICE_ACCOUNT_B64.");
+  if (!encoded) {
+    throw new Error("Thiếu biến môi trường GOOGLE_SERVICE_ACCOUNT_B64 trên Vercel.");
   }
-  if (!encoded || !env.IS_LIVE) return null;
 
   try {
     const parsed = JSON.parse(Buffer.from(encoded, "base64").toString("utf8")) as ServiceAccount;
@@ -86,7 +84,7 @@ async function getAccessToken(account: ServiceAccount) {
 }
 
 export function isGoogleSheetsConfigured() {
-  return Boolean(env.GOOGLE_SERVICE_ACCOUNT_B64 && env.IS_LIVE);
+  return Boolean(env.GOOGLE_SERVICE_ACCOUNT_B64);
 }
 
 export function extractSpreadsheetId(value: string) {

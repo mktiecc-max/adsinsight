@@ -11,14 +11,10 @@ export async function PUT(request: Request, context: RouteContext) {
   const payload = await request.json();
   try {
     const live = await saveLiveSource(code, payload);
+    if (!live) throw new Error("Thiếu biến môi trường Supabase trên Vercel");
     return NextResponse.json({
-      source:
-        live || {
-          ...payload,
-          code,
-          updatedAt: new Date().toISOString(),
-        },
-      meta: { mode: live ? "live" : "demo" },
+      source: live,
+      meta: { mode: "live" },
     });
   } catch (error) {
     return liveApiError(error);

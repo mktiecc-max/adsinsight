@@ -18,14 +18,8 @@ export function createAdminClient() {
 
   const url = env.SUPABASE_URL;
   const secret = env.SUPABASE_SERVICE_KEY;
-  if (env.IS_LIVE && (!url || !secret)) {
-    throw new Error(
-      "ADSINSIGHT_DATA_MODE=live nhưng thiếu NEXT_PUBLIC_SUPABASE_URL hoặc SUPABASE_SECRET_KEY.",
-    );
-  }
-  if (!url || !secret || !env.IS_LIVE) {
-    cachedClient = null;
-    return cachedClient;
+  if (!url || !secret) {
+    throw new Error("Thiếu NEXT_PUBLIC_SUPABASE_URL hoặc SUPABASE_SECRET_KEY.");
   }
 
   cachedClient = createClient(url, secret, {

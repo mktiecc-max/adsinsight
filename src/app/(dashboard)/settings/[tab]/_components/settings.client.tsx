@@ -169,7 +169,6 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
   const [liveHeaders, setLiveHeaders] = useState<string[] | null>(null);
   const [liveTabs, setLiveTabs] = useState<{ title: string; row_count: number }[] | null>(null);
   const [previewRows, setPreviewRows] = useState<Array<Record<string, unknown>>>([]);
-  const [dataMode, setDataMode] = useState<"demo" | "live" | "error">("demo");
   const [apiError, setApiError] = useState("");
 
   const config = useMemo(() => {
@@ -219,16 +218,7 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
     }
   }, [tab, config]);
 
-  const previewHeaders = useMemo(
-    () =>
-      liveHeaders ||
-      (tab === "ads"
-        ? ["ad_id", "campaign_name", "date_start", "spend", "Kết quả"]
-        : tab === "leads"
-          ? ["Khách hàng", "Chat page", "SĐT phụ huynh", "Ngày tạo đơn", "ad_id"]
-          : ["SĐT phụ huynh", "Level UCMAS", "Level UCKID", "Trung tâm", "Sale đặt lịch"]),
-    [tab, liveHeaders],
-  );
+  const previewHeaders = useMemo(() => liveHeaders || [], [liveHeaders]);
 
   const inspectSource = async () => {
     setApiError("");
@@ -247,11 +237,9 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
       setLiveHeaders(payload.data.headers);
       setLiveTabs(payload.data.tabs || null);
       setPreviewRows(payload.data.preview || []);
-      setDataMode(payload.meta.mode);
       setInspected(true);
     } catch (error) {
       setApiError(error instanceof Error ? error.message : "Không đọc được nguồn.");
-      setDataMode("error");
     }
   };
 
@@ -281,12 +269,10 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Không lưu được cấu hình.");
-      setDataMode(payload.meta?.mode || "demo");
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1400);
     } catch (error) {
       setApiError(error instanceof Error ? error.message : "Không lưu được cấu hình.");
-      setDataMode("error");
     } finally {
       setSaving(false);
     }
@@ -312,7 +298,13 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
             ))}
           </nav>
           <div className="connection-state">
-            <span /><div><strong>3/3 nguồn kết nối</strong><small>Kiểm tra lúc 09:14</small></div>
+            <span style={{ backgroundColor: initialSources.length >= 3 ? "var(--color-success)" : "var(--color-warning)" }} />
+            <div><strong>{initialSources.length}/3 nguồn kết nối</strong><small>Đã lưu trong hệ thống</small></div>
+          </div>
+          <div style={{ padding: "0 24px 24px" }}>
+            <Link href="/sync" className="button button-primary" style={{ width: "100%", justifyContent: "center" }}>
+              <Database size={14} /> Đồng bộ tất cả ngay
+            </Link>
           </div>
         </aside>
 
@@ -370,8 +362,8 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
                     <table>
                       <thead><tr>{previewHeaders.map((header) => <th key={header}>{header}</th>)}</tr></thead>
                       <tbody>
-                        {[0, 1, 2, 3, 4].map((row) => (
-                          <tr key={row}>{previewHeaders.map((header, index) => <td key={header}>{previewRows[row]?.[header] === undefined ? (index === 0 ? `${1000000000000 + row}` : index === 2 ? "0912 445 118" : `Dữ liệu mẫu ${row + 1}`) : String(previewRows[row][header])}</td>)}</tr>
+                        {previewRows.map((row, rowIndex) => (
+                          <tr key={rowIndex}>{previewHeaders.map((header) => <td key={header}>{String(row[header] ?? "")}</td>)}</tr>
                         ))}
                       </tbody>
                     </table>
