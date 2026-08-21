@@ -136,10 +136,12 @@ export class SyncService {
           }
         } else if (source.code === "leads") {
           const chunkSize = 1000;
+          const runId = crypto.randomUUID();
           for (let i = 0; i < validData.length; i += chunkSize) {
             const chunk = validData.slice(i, i + chunkSize);
             const deduplicated = deduplicate(chunk, r => String(r.phone));
             const toInsert = deduplicated.map(r => ({
+              run_id: runId,
               phone_raw: r.phone,
               lead_name: r.lead_name,
               created_at: r.created_at,
@@ -150,10 +152,12 @@ export class SyncService {
           }
         } else if (source.code === "crm_levels") {
           const chunkSize = 1000;
+          const runId = crypto.randomUUID();
           for (let i = 0; i < validData.length; i += chunkSize) {
             const chunk = validData.slice(i, i + chunkSize);
             const deduplicated = deduplicate(chunk, r => String(r.phone));
             const toInsert = deduplicated.map(r => ({
+              run_id: runId,
               phone_raw: r.phone,
               level_ucmas_raw: r.level_ucmas_raw,
               level_uckid_raw: r.level_uckid_raw,
