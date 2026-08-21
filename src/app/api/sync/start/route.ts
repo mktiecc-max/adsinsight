@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     let sourceCode;
     try {
       const body = await request.json();
-      sourceCode = body?.sourceCode;
+      sourceCode = body?.sourceCode || body?.source_id;
     } catch (e) {
       // ignore JSON parse error
     }
