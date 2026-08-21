@@ -200,14 +200,19 @@ export class SyncService {
                 ad_id: id,
                 campaign_name: "Unknown",
                 owner: "Unknown",
-                brand: "Unknown",
+                brand: null,        // CHECK constraint only allows 'ucmas','uckid', or NULL
                 objective: "Unknown",
                 account_id: "Unknown",
                 adset_name: "Unknown",
                 ad_name: "Unknown",
                 creative_key: "Unknown"
               }));
-              await supabase.from("dim_ad").upsert(dummyDimAds, { onConflict: "ad_id", ignoreDuplicates: true });
+              const { error: dimErr } = await supabase.from("dim_ad").upsert(dummyDimAds, { onConflict: "ad_id", ignoreDuplicates: true });
+              if (dimErr) {
+                // If dim_ad insert fails, nullify ad_id on all rows so FK doesn't block
+                console.warn("dim_ad upsert failed, nullifying ad_ids:", dimErr.message);
+                deduped.forEach(r => { r.ad_id = null; });
+              }
             }
 
             // Upsert — duplicates on source_row_key are silently skipped
