@@ -157,16 +157,19 @@ export class SyncService {
             
             const toInsert = deduplicated
               .filter(r => !existingPhones.has(String(r.phone)))
-              .map(r => {
                 const digits = String(r.phone || "").replace(/\D/g, "");
-                const validPhone9 = digits.length >= 9 ? digits.slice(-9) : digits.padStart(9, '0');
+                let validPhone9 = digits.length >= 9 ? digits.slice(-9) : digits;
                 
+                // Validate against constraint: phone IS NULL OR phone ~ '^[35789][0-9]{8}$'
+                const isValidPhone = /^[35789][0-9]{8}$/.test(validPhone9);
+                if (!isValidPhone) validPhone9 = null as any;
+
                 return {
                   run_id: crypto.randomUUID(),
-                  source_row_key: String(r.__sheet_row || ""),
+                  source_row_key: String(r.__sheet_row || crypto.randomUUID()),
                   phone: validPhone9,
                   phone_raw: r.phone || "",
-                  phone_status: digits.length >= 9 ? "valid" : "invalid",
+                  phone_status: isValidPhone ? "valid" : "invalid",
                   lead_name: r.lead_name || "",
                   created_at: r.created_at || new Date().toISOString(),
                   ad_id: r.ad_id || null,
