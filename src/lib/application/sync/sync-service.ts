@@ -196,7 +196,7 @@ export class SyncService {
                 await supabase.from("dim_ad").upsert(dummyDimAds, { onConflict: "ad_id", ignoreDuplicates: true });
               }
             
-              const { error: insertError } = await supabase.from("fact_lead").insert(toInsert);
+              const { error: insertError } = await supabase.from("fact_lead").upsert(toInsert, { onConflict: "source_row_key", ignoreDuplicates: true });
               if (insertError) throw new Error("Lỗi insert fact_lead: " + insertError.message);
               newRows += toInsert.length;
             }
@@ -241,7 +241,7 @@ export class SyncService {
               });
               
             if (toInsert.length > 0) {
-              const { error: insertError } = await supabase.from("dim_customer").insert(toInsert);
+              const { error: insertError } = await supabase.from("dim_customer").upsert(toInsert, { onConflict: "phone", ignoreDuplicates: true });
               if (insertError) throw new Error("Lỗi insert dim_customer: " + insertError.message);
               newRows += toInsert.length;
             }
