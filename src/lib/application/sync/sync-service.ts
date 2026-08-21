@@ -157,6 +157,7 @@ export class SyncService {
             
             const toInsert = deduplicated
               .filter(r => !existingPhones.has(String(r.phone)))
+              .map(r => {
                 const digits = String(r.phone || "").replace(/\D/g, "");
                 let validPhone9 = digits.length >= 9 ? digits.slice(-9) : digits;
                 
