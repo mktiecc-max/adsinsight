@@ -193,8 +193,16 @@ export class SyncService {
             // Deduplicate by source_row_key (PK)
             const deduped = deduplicate(rows, r => r.source_row_key);
 
+            // Check which source_row_keys already exist so we can count only new rows
+            const keys = deduped.map(r => r.source_row_key);
+            const { data: existingLeads } = await supabase.from("fact_lead").select("source_row_key").in("source_row_key", keys);
+            const existingKeys = new Set(existingLeads?.map(e => e.source_row_key) || []);
+            const newOnly = deduped.filter(r => !existingKeys.has(r.source_row_key));
+
+            if (newOnly.length === 0) continue; // All rows already exist, skip
+
             // Ensure referenced ad_ids exist in dim_ad
-            const uniqueAdIds = Array.from(new Set(deduped.map(r => r.ad_id).filter(Boolean)));
+            const uniqueAdIds = Array.from(new Set(newOnly.map(r => r.ad_id).filter(Boolean)));
             if (uniqueAdIds.length > 0) {
               const dummyDimAds = uniqueAdIds.map(id => ({
                 ad_id: id,
@@ -211,16 +219,16 @@ export class SyncService {
               if (dimErr) {
                 // If dim_ad insert fails, nullify ad_id on all rows so FK doesn't block
                 console.warn("dim_ad upsert failed, nullifying ad_ids:", dimErr.message);
-                deduped.forEach(r => { r.ad_id = null; });
+                newOnly.forEach(r => { r.ad_id = null; });
               }
             }
 
-            // Upsert — duplicates on source_row_key are silently skipped
+            // Insert only new rows
             const { error: insertError } = await supabase
               .from("fact_lead")
-              .upsert(deduped, { onConflict: "source_row_key", ignoreDuplicates: true });
+              .insert(newOnly);
             if (insertError) throw new Error("Lỗi insert fact_lead: " + insertError.message);
-            totalUpserted += deduped.length;
+            totalUpserted += newOnly.length;
           }
 
         // ──────────────────────────────────────────────
@@ -258,11 +266,19 @@ export class SyncService {
             const deduped = deduplicate(rows, r => r.phone);
 
             if (deduped.length > 0) {
-              const { error: insertError } = await supabase
-                .from("dim_customer")
-                .upsert(deduped, { onConflict: "phone", ignoreDuplicates: true });
-              if (insertError) throw new Error("Lỗi insert dim_customer: " + insertError.message);
-              totalUpserted += deduped.length;
+              // Check which phones already exist so we only count new rows
+              const phones = deduped.map(r => r.phone);
+              const { data: existingCrm } = await supabase.from("dim_customer").select("phone").in("phone", phones);
+              const existingPhones = new Set(existingCrm?.map(e => e.phone) || []);
+              const newOnly = deduped.filter(r => !existingPhones.has(r.phone));
+
+              if (newOnly.length > 0) {
+                const { error: insertError } = await supabase
+                  .from("dim_customer")
+                  .insert(newOnly);
+                if (insertError) throw new Error("Lỗi insert dim_customer: " + insertError.message);
+              }
+              totalUpserted += newOnly.length;
             }
           }
         }
