@@ -312,10 +312,17 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
     setSyncing(true);
     setSyncResult("");
     try {
-      const res = await fetch("/api/sync/start", { method: "POST" });
+      const sourceCode = tab === "ads" ? "ads_daily" : tab === "crm" ? "crm_levels" : "leads";
+      const res = await fetch("/api/sync/start", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceCode })
+      });
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || "Lỗi không xác định");
-      setSyncResult("Đã bắt đầu đồng bộ");
+      
+      const rows = payload.results?.[0]?.rows || 0;
+      setSyncResult(`Đã đồng bộ ${rows} dòng`);
     } catch(e) {
       setSyncResult(e instanceof Error ? `Lỗi: ${e.message}` : "Đồng bộ thất bại");
     } finally {
