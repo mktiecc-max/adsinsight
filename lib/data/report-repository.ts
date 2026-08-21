@@ -5,6 +5,7 @@ import { calculatePerformance, median } from "@/lib/domain/metrics";
 import { classifyMatrix } from "@/lib/domain/matrix";
 import type { CalculatedPerformanceRow, PerformanceRow } from "@/lib/domain/types";
 import { createAdminClient, liveDataUnavailable } from "@/lib/supabase/admin";
+import { unstable_cache } from "next/cache";
 
 export type ReportLevel = "ad" | "adset" | "campaign" | "creative" | "owner" | "brand";
 
@@ -128,89 +129,21 @@ export async function getLivePerformance(options: {
   from?: string | null;
   to?: string | null;
   level: ReportLevel;
-}) {
-  const client = createAdminClient();
-  if (!client) return null;
+}): Promise<CalculatedPerformanceRow[] | null> {
+  const fetchCached = unstable_cache(
+    async () => {
+      const client = createAdminClient();
+      if (!client) return null;
 
-  try {
-    const ads = await fetchAll<AdDailyRow>((from, to) => {
-      let query = client
-        .from("fact_ad_daily")
-        .select(
-          "date,ad_id,spend,messages,impressions,clicks,reach,frequency,dim_ad!inner(ad_id,account_id,campaign_name,adset_name,ad_name,owner,brand,objective,creative_key)",
-        )
-        .order("date", { ascending: true })
-        .range(from, to);
-      if (options.from) query = query.gte("date", options.from);
-      if (options.to) query = query.lte("date", options.to);
-      return query;
-    });
+      try {
+        const { data: rawGroups, error } = await client.rpc("report_performance", {
+          p_from_date: options.from || null,
+          p_to_date: options.to || null,
+          p_level: options.level === "creative" ? "creative" : options.level === "brand" ? "brand" : options.level === "owner" ? "owner" : options.level === "ad" ? "ad" : options.level === "adset" ? "adset" : options.level === "campaign" ? "campaign" : "account",
+        });
+        if (error) throw error;
 
-    const leads = await fetchAll<LeadRow>((from, to) => {
-      let query = client
-        .from("fact_lead")
-        .select("source_row_key,phone,phone_status,created_at,ad_id,lead_name,page_name,is_first_touch")
-        .order("source_row_key", { ascending: true })
-        .range(from, to);
-      if (options.from) query = query.gte("created_at", options.from);
-      if (options.to) query = query.lte("created_at", options.to);
-      return query;
-    });
-
-    const dimensions = new Map<string, AdDimension>();
-    ads.forEach((row) => {
-      const dimension = oneDimension(row.dim_ad);
-      if (dimension) dimensions.set(row.ad_id, dimension);
-    });
-
-    const groups = new Map<string, GroupAccumulator>();
-    ads.forEach((row) => {
-      const dimension = oneDimension(row.dim_ad);
-      if (!dimension) return;
-      const identity = levelIdentity(options.level, dimension);
-      const existing = groups.get(identity.id) || {
-        ...identity,
-        owner: dimension.owner || "Chưa gán",
-        brand: dimension.brand || "ucmas",
-        objective: dimension.objective || "Tin nhắn",
-        adIds: new Set<string>(),
-        spend: 0,
-        messages: 0,
-        impressions: 0,
-        clicks: 0,
-        reach: 0,
-        leadRows: [],
-      };
-      existing.adIds.add(row.ad_id);
-      existing.spend += asNumber(row.spend);
-      existing.messages += asNumber(row.messages);
-      existing.impressions += asNumber(row.impressions);
-      existing.clicks += asNumber(row.clicks);
-      existing.reach += asNumber(row.reach);
-      groups.set(identity.id, existing);
-    });
-
-    const groupByAd = new Map<string, GroupAccumulator>();
-    groups.forEach((group) => group.adIds.forEach((adId) => groupByAd.set(adId, group)));
-    leads.forEach((lead) => {
-      if (!lead.ad_id) return;
-      groupByAd.get(lead.ad_id)?.leadRows.push(lead);
-    });
-
-    const phones = [
-      ...new Set(
-        leads
-          .filter((lead) => lead.phone_status === "valid" && lead.phone)
-          .map((lead) => lead.phone as string),
-      ),
-    ];
-    const customers = await fetchCustomers(client, phones);
-
-    const calculated = [...groups.values()].map((group) => {
-      const validRows = group.leadRows.filter((lead) => lead.phone_status === "valid" && lead.phone);
-      const uniquePhones = [...new Set(validRows.map((lead) => lead.phone as string))];
-      const matched = uniquePhones.map((phone) => customers.get(phone)).filter(Boolean) as CustomerRow[];
-      const totalLeadRows = group.leadRows.length;
+    const calculated = (rawGroups || []).map((group: any) => {
       const raw: PerformanceRow = {
         id: group.id,
         name: group.name,
@@ -220,18 +153,14 @@ export async function getLivePerformance(options: {
         status: "active",
         spend: group.spend,
         messages: group.messages,
-        sql: uniquePhones.length,
-        rank1: matched.filter((customer) => customer.max_rank >= 1).length,
-        rank2: matched.filter((customer) => customer.max_rank >= 2).length,
-        rank3: matched.filter((customer) => customer.max_rank >= 3).length,
-        rank4: matched.filter((customer) => customer.max_rank >= 4).length,
-        duplicateRate: validRows.length ? (validRows.length - uniquePhones.length) / validRows.length : 0,
-        invalidRate: totalLeadRows
-          ? group.leadRows.filter((lead) => lead.phone_status === "invalid").length / totalLeadRows
-          : 0,
-        matchRate: uniquePhones.length
-          ? matched.filter((customer) => customer.in_crm).length / uniquePhones.length
-          : 0,
+        sql: group.sql_count,
+        rank1: group.rank1,
+        rank2: group.rank2,
+        rank3: group.rank3,
+        rank4: group.rank4,
+        duplicateRate: group.duplicate_rate,
+        invalidRate: group.invalid_rate,
+        matchRate: group.match_rate,
         cpm: group.impressions ? (group.spend / group.impressions) * 1000 : undefined,
         ctr: group.impressions ? group.clicks / group.impressions : undefined,
         frequency: group.reach ? group.impressions / group.reach : undefined,
@@ -240,34 +169,42 @@ export async function getLivePerformance(options: {
       return calculatePerformance(raw);
     });
 
-    const rankable = calculated.filter((row) => row.isRankable);
-    const medianCpsql = median(rankable.map((row) => row.cpsql)) || 0;
-    const medianEscape = median(rankable.map((row) => row.escapeRate)) || 0;
-    return calculated.map((row) => {
+    const rankable = calculated.filter((row: CalculatedPerformanceRow) => row.isRankable);
+    const medianCpsql = median(rankable.map((row: CalculatedPerformanceRow) => row.cpsql)) || 0;
+    const medianEscape = median(rankable.map((row: CalculatedPerformanceRow) => row.escapeRate)) || 0;
+    return calculated.map((row: CalculatedPerformanceRow) => {
       const zone = classifyMatrix(row.cpsql, row.escapeRate, medianCpsql, medianEscape, row.isRankable);
       const next = { ...row, zone };
       return { ...next, warning: warningFor(next) };
     });
   } catch (error) {
+    console.error("report_performance RPC error:", error);
     throw liveDataUnavailable(error);
   }
+    },
+    [`performance-${options.from || "all"}-${options.to || "all"}-${options.level}`],
+    { tags: ["report"], revalidate: 3600 }
+  );
+  return fetchCached();
 }
 
 export async function getLiveTimeseries(options: { from?: string | null; to?: string | null }) {
-  const client = createAdminClient();
-  if (!client) return null;
+  const fetchCached = unstable_cache(
+    async () => {
+      const client = createAdminClient();
+      if (!client) return null;
 
-  try {
-    const ads = await fetchAll<Omit<AdDailyRow, "dim_ad">>((from, to) => {
-      let query = client
-        .from("fact_ad_daily")
-        .select("date,ad_id,spend,messages,impressions,clicks,reach,frequency")
-        .order("date", { ascending: true })
-        .range(from, to);
-      if (options.from) query = query.gte("date", options.from);
-      if (options.to) query = query.lte("date", options.to);
-      return query;
-    });
+      try {
+        const ads = await fetchAll<Omit<AdDailyRow, "dim_ad">>((from, to) => {
+          let query = client
+            .from("fact_ad_daily")
+            .select("date,ad_id,spend,messages,impressions,clicks,reach,frequency")
+            .order("date", { ascending: true })
+            .range(from, to);
+          if (options.from) query = query.gte("date", options.from);
+          if (options.to) query = query.lte("date", options.to);
+          return query;
+        });
     const leads = await fetchAll<Pick<LeadRow, "source_row_key" | "created_at" | "phone" | "phone_status">>(
       (from, to) => {
         let query = client
@@ -306,23 +243,30 @@ export async function getLiveTimeseries(options: { from?: string | null; to?: st
   } catch (error) {
     throw liveDataUnavailable(error);
   }
+    },
+    [`timeseries-${options.from || "all"}-${options.to || "all"}`],
+    { tags: ["report"], revalidate: 3600 }
+  );
+  return fetchCached();
 }
 
 export async function getLiveLeads(options: { from?: string | null; to?: string | null }) {
-  const client = createAdminClient();
-  if (!client) return null;
+  const fetchCached = unstable_cache(
+    async () => {
+      const client = createAdminClient();
+      if (!client) return null;
 
-  try {
-    const leads = await fetchAll<LeadRow>((from, to) => {
-      let query = client
-        .from("fact_lead")
-        .select("source_row_key,phone,phone_status,created_at,ad_id,lead_name,page_name,is_first_touch")
-        .order("created_at", { ascending: false, nullsFirst: false })
-        .range(from, to);
-      if (options.from) query = query.gte("created_at", options.from);
-      if (options.to) query = query.lte("created_at", options.to);
-      return query;
-    });
+      try {
+        const leads = await fetchAll<LeadRow>((from, to) => {
+          let query = client
+            .from("fact_lead")
+            .select("source_row_key,phone,phone_status,created_at,ad_id,lead_name,page_name,is_first_touch")
+            .order("created_at", { ascending: false, nullsFirst: false })
+            .range(from, to);
+          if (options.from) query = query.gte("created_at", options.from);
+          if (options.to) query = query.lte("created_at", options.to);
+          return query;
+        });
     const adIds = [...new Set(leads.map((lead) => lead.ad_id).filter(Boolean))] as string[];
     const dimensions = new Map<string, Pick<AdDimension, "ad_id" | "ad_name" | "campaign_name">>();
     for (let index = 0; index < adIds.length; index += 500) {
@@ -368,4 +312,9 @@ export async function getLiveLeads(options: { from?: string | null; to?: string 
   } catch (error) {
     throw liveDataUnavailable(error);
   }
+    },
+    [`leads-${options.from || "all"}-${options.to || "all"}`],
+    { tags: ["report"], revalidate: 3600 }
+  );
+  return fetchCached();
 }

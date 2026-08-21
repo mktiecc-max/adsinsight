@@ -33,10 +33,10 @@ export async function GET(request: Request) {
     const sourceRows = liveRows || [];
     const [sortKey, direction] = sort.split(":") as ["cpsql" | "spend" | "sql", "asc" | "desc"];
     const filtered = sourceRows
-    .filter((row) => includeUnrankable || row.isRankable)
-    .filter((row) => !brand.length || brand.includes(row.brand))
-    .filter((row) => !owner.length || owner.includes(row.owner))
-    .sort((a, b) => {
+    .filter((row: any) => includeUnrankable || row.isRankable)
+    .filter((row: any) => !brand.length || brand.includes(row.brand))
+    .filter((row: any) => !owner.length || owner.includes(row.owner))
+    .sort((a: any, b: any) => {
       const left = a[sortKey] ?? Number.POSITIVE_INFINITY;
       const right = b[sortKey] ?? Number.POSITIVE_INFINITY;
       return direction === "asc" ? left - right : right - left;
