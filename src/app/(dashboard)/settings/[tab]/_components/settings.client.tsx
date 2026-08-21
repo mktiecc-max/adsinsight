@@ -430,8 +430,35 @@ export function SettingsClient({ initialSources = [] }: { initialSources?: any[]
                 <div className="field-map-head"><span>Trường chuẩn</span><span>Cột trong nguồn</span><span>Xử lý</span><span /></div>
                 {config.fields.map((field: any) => {
                   const mappedCol = fieldMappings[field.target]?.column;
+                  const transform = fieldMappings[field.target]?.transform || "Không xử lý";
+                  
                   const sampleValues = mappedCol && previewRows.length > 0 
-                    ? previewRows.map(r => r[mappedCol]).filter(v => v !== undefined && String(v).trim() !== "").slice(0, 2).join(", ")
+                    ? previewRows.map(r => r[mappedCol]).filter(v => v !== undefined && String(v).trim() !== "").slice(0, 2).map(v => {
+                        const original = String(v).trim();
+                        let transformed = original;
+                        switch (transform) {
+                          case "Số VN":
+                            transformed = String(Number(original.replace(/\./g, "").replace(/,/g, ".")));
+                            if (transformed === "NaN") transformed = "Lỗi";
+                            break;
+                          case "SĐT VN": {
+                            let p = original.replace(/\D/g, "");
+                            if (p.startsWith("84")) p = "0" + p.slice(2);
+                            transformed = p;
+                            break;
+                          }
+                          case "Ngày ISO": {
+                            const match = original.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                            if (match) transformed = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+                            else transformed = "Y-M-D"; // approximate mock
+                            break;
+                          }
+                          case "Quy đổi bậc":
+                            transformed = "Bậc 1"; // mock
+                            break;
+                        }
+                        return transform === "Không xử lý" ? original : `${original} ➔ ${transformed}`;
+                    }).join(", ")
                     : "";
 
                   return (
