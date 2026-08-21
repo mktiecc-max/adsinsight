@@ -158,12 +158,14 @@ export async function fetchSheetData(spreadsheetValue: string, sheetTab: string,
   const headers = rawData[0].map(String);
   const rows = rawData.slice(1);
 
-  return rows.map((row) => {
-    const obj: Record<string, string> = {};
-    headers.forEach((header, index) => {
+  return rows.map((row, index) => {
+    const obj: Record<string, any> = {
+      __sheet_row: headerRow + 1 + index
+    };
+    headers.forEach((header, colIndex) => {
       if (header) {
         // UNFORMATTED_VALUE returns numbers/booleans natively, so cast to string safely
-        obj[header] = row[index] !== undefined && row[index] !== null ? String(row[index]) : "";
+        obj[header] = row[colIndex] !== undefined && row[colIndex] !== null ? String(row[colIndex]) : "";
       }
     });
     return obj;

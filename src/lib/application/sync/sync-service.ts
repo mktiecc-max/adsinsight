@@ -71,7 +71,9 @@ export class SyncService {
         const rows = await fetchSheetData(source.spreadsheet_id, source.sheet_tab, source.header_row || 1);
         
         const mappedData = rows.map(row => {
-          const record: Record<string, any> = {};
+          const record: Record<string, any> = {
+            __sheet_row: row.__sheet_row
+          };
           source.fields.forEach((field: any) => {
             if (field.sheet_column) {
               const rawValue = row[field.sheet_column];
@@ -142,6 +144,7 @@ export class SyncService {
             const deduplicated = deduplicate(chunk, r => String(r.phone));
             const toInsert = deduplicated.map(r => ({
               run_id: runId,
+              sheet_row: r.__sheet_row,
               phone_raw: r.phone,
               lead_name: r.lead_name,
               created_at: r.created_at,
@@ -158,6 +161,7 @@ export class SyncService {
             const deduplicated = deduplicate(chunk, r => String(r.phone));
             const toInsert = deduplicated.map(r => ({
               run_id: runId,
+              sheet_row: r.__sheet_row,
               phone_raw: r.phone,
               level_ucmas_raw: r.level_ucmas_raw,
               level_uckid_raw: r.level_uckid_raw,
