@@ -27,7 +27,13 @@ export const env = {
     return process.env.ANTHROPIC_API_KEY || "";
   },
   get IS_LIVE() {
-    return process.env.ADSINSIGHT_DATA_MODE === "live";
+    if (process.env.ADSINSIGHT_DATA_MODE === "demo") return false;
+    if (process.env.ADSINSIGHT_DATA_MODE === "live") return true;
+    return Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL && 
+      process.env.SUPABASE_SECRET_KEY && 
+      process.env.GOOGLE_SERVICE_ACCOUNT_B64
+    );
   },
   get IS_DEV() {
     return process.env.NODE_ENV === "development";
