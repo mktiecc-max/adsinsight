@@ -157,20 +157,41 @@ export class SyncService {
             
             const toInsert = deduplicated
               .filter(r => !existingPhones.has(String(r.phone)))
-              .map(r => ({
-                run_id: crypto.randomUUID(),
-                source_row_key: String(r.__sheet_row || ""),
-                phone: r.phone,
-                phone_raw: r.phone,
-                phone_status: String(r.phone).length >= 9 ? "valid" : "invalid",
-                lead_name: r.lead_name || "",
-                created_at: r.created_at || new Date().toISOString(),
-                ad_id: r.ad_id || "",
-                page_name: "",
-                is_first_touch: true
-              }));
+              .map(r => {
+                const digits = String(r.phone || "").replace(/\D/g, "");
+                const validPhone9 = digits.length >= 9 ? digits.slice(-9) : digits.padStart(9, '0');
+                
+                return {
+                  run_id: crypto.randomUUID(),
+                  source_row_key: String(r.__sheet_row || ""),
+                  phone: validPhone9,
+                  phone_raw: r.phone || "",
+                  phone_status: digits.length >= 9 ? "valid" : "invalid",
+                  lead_name: r.lead_name || "",
+                  created_at: r.created_at || new Date().toISOString(),
+                  ad_id: r.ad_id || null,
+                  page_name: "",
+                  is_first_touch: true
+                };
+              });
               
             if (toInsert.length > 0) {
+              const uniqueAdIds = Array.from(new Set(toInsert.map(r => r.ad_id).filter(Boolean)));
+              if (uniqueAdIds.length > 0) {
+                const dummyDimAds = uniqueAdIds.map(id => ({
+                  ad_id: id,
+                  campaign_name: "Unknown",
+                  owner: "Unknown",
+                  brand: "Unknown",
+                  objective: "Unknown",
+                  account_id: "Unknown",
+                  adset_name: "Unknown",
+                  ad_name: "Unknown",
+                  creative_key: "Unknown"
+                }));
+                await supabase.from("dim_ad").upsert(dummyDimAds, { onConflict: "ad_id", ignoreDuplicates: true });
+              }
+            
               const { error: insertError } = await supabase.from("fact_lead").insert(toInsert);
               if (insertError) throw new Error("Lỗi insert fact_lead: " + insertError.message);
               newRows += toInsert.length;
@@ -193,6 +214,9 @@ export class SyncService {
             const toInsert = deduplicated
               .filter(r => !existingPhones.has(String(r.phone)))
               .map(r => {
+                const digits = String(r.phone || "").replace(/\D/g, "");
+                const validPhone9 = digits.length >= 9 ? digits.slice(-9) : digits.padStart(9, '0');
+                
                 const uckid = r.level_uckid_raw || "";
                 const ucmas = r.level_ucmas_raw || "";
                 let max_rank = 0;
@@ -202,7 +226,7 @@ export class SyncService {
                 if (uckid.includes("L4") || uckid.includes("L5") || uckid.includes("L6") || ucmas.includes("L8") || ucmas.includes("L9") || ucmas.includes("L10")) max_rank = 4;
                 
                 return {
-                  phone: r.phone,
+                  phone: validPhone9,
                   max_rank,
                   current_rank: max_rank,
                   in_crm: true,
