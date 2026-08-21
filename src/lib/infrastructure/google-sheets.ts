@@ -138,3 +138,34 @@ export async function inspectSpreadsheet(spreadsheetValue: string, range?: strin
     sample: (values?.values || []).slice(1, 6),
   };
 }
+
+export async function fetchSheetData(spreadsheetValue: string, sheetTab: string, headerRow: number = 1): Promise<Record<string, string>[]> {
+  const spreadsheetId = extractSpreadsheetId(spreadsheetValue);
+  
+  // Just fetch a reasonable large range to get all data (e.g., A to ZZ, up to 100,000 rows)
+  // headerRow is 1-indexed
+  const range = `'${sheetTab.replace(/'/g, "''")}'!A${headerRow}:ZZ`;
+  
+  const values = await googleSheetsFetch<{ range: string; values?: unknown[][] }>(
+    `spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`
+  );
+
+  if (!values || !values.values || values.values.length === 0) {
+    return [];
+  }
+
+  const rawData = values.values;
+  const headers = rawData[0].map(String);
+  const rows = rawData.slice(1);
+
+  return rows.map((row) => {
+    const obj: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      if (header) {
+        // UNFORMATTED_VALUE returns numbers/booleans natively, so cast to string safely
+        obj[header] = row[index] !== undefined && row[index] !== null ? String(row[index]) : "";
+      }
+    });
+    return obj;
+  });
+}

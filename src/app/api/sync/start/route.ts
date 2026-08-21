@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { liveApiError } from "@/lib/shared/api-response";
+import { SyncService } from "@/lib/application/sync/sync-service";
 
 export async function POST(request: Request) {
   try {
-    throw new Error("Chưa triển khai dữ liệu live cho sync_run");
+    const result = await SyncService.startSync();
+    return NextResponse.json(result);
   } catch (error) {
     return liveApiError(error);
   }
