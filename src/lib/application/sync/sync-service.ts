@@ -90,12 +90,12 @@ export class SyncService {
             await supabase.from("dim_ad").upsert(dimAds, { onConflict: "ad_id", ignoreDuplicates: false });
 
             // 2. Upsert Facts
-            const factAds = chunk.map(r => {
-              const fact: any = { ad_id: r.ad_id, date: r.date };
-              if (r.spend !== undefined) fact.spend = r.spend;
-              if (r.messages !== undefined) fact.messages = r.messages;
-              return fact;
-            });
+            const factAds = chunk.map(r => ({
+              ad_id: r.ad_id,
+              date: r.date,
+              spend: Number(r.spend) || 0,
+              messages: Number(r.messages) || 0,
+            }));
             const { error: upsertError } = await supabase.from("fact_ad_daily").upsert(factAds, { onConflict: "ad_id,date", ignoreDuplicates: false });
             if (upsertError) throw new Error("Lỗi upsert fact_ad_daily: " + upsertError.message);
           }
