@@ -1,5 +1,5 @@
-import { env } from "@/lib/config/env";
 "use client";
+import { env } from "@/lib/config/env";
 
 import Link from "next/link";
 import { ArrowRight, BarChart3, Check, Mail, ShieldCheck } from "lucide-react";

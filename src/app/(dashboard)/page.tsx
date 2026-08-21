@@ -7,13 +7,8 @@ import { detectAlerts } from "@/lib/domain/alerts";
 import { cn } from "@/lib/shared/utils";
 import { Delta } from "@/components/ui";
 import { getLivePerformance, getLiveTimeseries } from "@/lib/infrastructure/repositories/report-repository";
-import dynamic from "next/dynamic";
 import { AiSummaryPanelClient } from "./_components/ai-summary-panel.client";
-
-const OverviewChartClient = dynamic(
-  () => import("@/components/charts/overview-chart").then(mod => mod.OverviewChartClient),
-  { ssr: false, loading: () => <div className="overview-chart loading-skeleton" /> }
-);
+import { OverviewChartClient } from "@/components/charts/overview-chart";
 import type { CalculatedPerformanceRow, Zone } from "@/lib/domain/types";
 
 export default async function OverviewPage({
