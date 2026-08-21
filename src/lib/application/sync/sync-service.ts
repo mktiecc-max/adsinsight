@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/infrastructure/supabase/admin";
 import { fetchSheetData } from "@/lib/infrastructure/google-sheets";
+import { parseCampaignName } from "@/lib/transform";
 
 function transformData(value: string, transform: string): any {
   if (!value) return null;
@@ -93,17 +94,23 @@ export class SyncService {
             const chunk = validData.slice(i, i + chunkSize);
             
             // 1. Upsert Dimensions
-            const dimAds = chunk.map(r => ({
-              ad_id: r.ad_id,
-              campaign_name: r.campaign_name || "Unknown",
-              owner: r.owner || "Unknown",
-              brand: r.brand || "Unknown",
-              objective: r.objective || "Unknown",
-              account_id: r.account_id || "Unknown",
-              adset_name: r.adset_name || "Unknown",
-              ad_name: r.ad_name || "Unknown",
-              creative_key: r.creative_key || "Unknown"
-            }));
+            const dimAds = chunk.map(r => {
+              const campName = r.campaign_name || "Unknown";
+              const parsed = parseCampaignName(campName);
+              const brand = parsed.brand === "ucmas" || parsed.brand === "uckid" ? parsed.brand : "ucmas";
+              
+              return {
+                ad_id: r.ad_id,
+                campaign_name: campName,
+                owner: r.owner || parsed.owner || "Unknown",
+                brand: r.brand || brand,
+                objective: r.objective || parsed.objective || "Unknown",
+                account_id: r.account_id || "Unknown",
+                adset_name: r.adset_name || "Unknown",
+                ad_name: r.ad_name || "Unknown",
+                creative_key: r.creative_key || "Unknown"
+              };
+            });
             const { error: dimError } = await supabase.from("dim_ad").upsert(dimAds, { onConflict: "ad_id", ignoreDuplicates: false });
             if (dimError) throw new Error("Lỗi upsert dim_ad: " + dimError.message);
 
