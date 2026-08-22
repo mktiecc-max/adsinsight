@@ -266,19 +266,12 @@ export class SyncService {
             const deduped = deduplicate(rows, r => r.phone);
 
             if (deduped.length > 0) {
-              // Check which phones already exist so we only count new rows
-              const phones = deduped.map(r => r.phone);
-              const { data: existingCrm } = await supabase.from("dim_customer").select("phone").in("phone", phones);
-              const existingPhones = new Set(existingCrm?.map(e => e.phone) || []);
-              const newOnly = deduped.filter(r => !existingPhones.has(r.phone));
-
-              if (newOnly.length > 0) {
-                const { error: insertError } = await supabase
-                  .from("dim_customer")
-                  .insert(newOnly);
-                if (insertError) throw new Error("Lỗi insert dim_customer: " + insertError.message);
-              }
-              totalUpserted += newOnly.length;
+              const { error: upsertError } = await supabase
+                .from("dim_customer")
+                .upsert(deduped, { onConflict: "phone", ignoreDuplicates: false });
+              if (upsertError) throw new Error("Lỗi upsert dim_customer: " + upsertError.message);
+              
+              totalUpserted += deduped.length;
             }
           }
         }
