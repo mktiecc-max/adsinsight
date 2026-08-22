@@ -19,11 +19,14 @@ export default async function OverviewPage({
   const params = await searchParams;
   const from = typeof params.from === "string" ? params.from : null;
   const to = typeof params.to === "string" ? params.to : null;
+  const brand = typeof params.brand === "string" ? params.brand : null;
+  const owner = typeof params.owner === "string" ? params.owner : null;
+  const account = typeof params.account === "string" ? params.account : null;
   
   // Parallel fetch on the server!
   const [rows, series] = await Promise.all([
-    getLivePerformance({ from, to, level: "campaign" }),
-    getLiveTimeseries({ from, to }),
+    getLivePerformance({ from, to, level: "campaign", brand, owner, account }),
+    getLiveTimeseries({ from, to, brand, owner, account }),
   ]);
 
   const validRows = rows || [];

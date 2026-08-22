@@ -129,6 +129,9 @@ export async function getLivePerformance(options: {
   from?: string | null;
   to?: string | null;
   level: ReportLevel;
+  brand?: string | null;
+  owner?: string | null;
+  account?: string | null;
 }): Promise<CalculatedPerformanceRow[] | null> {
   const fetchCached = unstable_cache(
     async () => {
@@ -140,6 +143,9 @@ export async function getLivePerformance(options: {
           p_from_date: options.from || null,
           p_to_date: options.to || null,
           p_level: options.level === "creative" ? "creative" : options.level === "brand" ? "brand" : options.level === "owner" ? "owner" : options.level === "ad" ? "ad" : options.level === "adset" ? "adset" : options.level === "campaign" ? "campaign" : "account",
+          p_brands: options.brand ? [options.brand] : null,
+          p_owners: options.owner ? [options.owner] : null,
+          p_accounts: options.account ? [options.account] : null,
         });
         if (error) throw error;
 
@@ -182,38 +188,50 @@ export async function getLivePerformance(options: {
     throw liveDataUnavailable(error);
   }
     },
-    [`performance-${options.from || "all"}-${options.to || "all"}-${options.level}`],
+    [`performance-${options.from || "all"}-${options.to || "all"}-${options.level}-${options.brand || "all"}-${options.owner || "all"}-${options.account || "all"}`],
     { tags: ["report"], revalidate: 3600 }
   );
   return fetchCached();
 }
 
-export async function getLiveTimeseries(options: { from?: string | null; to?: string | null }) {
+export async function getLiveTimeseries(options: { 
+  from?: string | null; 
+  to?: string | null;
+  brand?: string | null;
+  owner?: string | null;
+  account?: string | null;
+}) {
   const fetchCached = unstable_cache(
     async () => {
       const client = createAdminClient();
       if (!client) return null;
 
       try {
-        const ads = await fetchAll<Omit<AdDailyRow, "dim_ad">>((from, to) => {
+        const ads = await fetchAll<any>((from, to) => {
           let query = client
-            .from("fact_ad_daily")
-            .select("date,ad_id,spend,messages,impressions,clicks,reach,frequency")
+            .from("mv_ad_daily_enriched")
+            .select("date,ad_id,spend,messages,impressions,clicks,reach")
             .order("date", { ascending: true })
             .range(from, to);
           if (options.from) query = query.gte("date", options.from);
           if (options.to) query = query.lte("date", options.to);
+          if (options.brand) query = query.eq("brand", options.brand);
+          if (options.owner) query = query.eq("owner", options.owner);
+          if (options.account) query = query.eq("account_id", options.account);
           return query;
         });
-    const leads = await fetchAll<Pick<LeadRow, "source_row_key" | "created_at" | "phone" | "phone_status">>(
+    const leads = await fetchAll<any>(
       (from, to) => {
         let query = client
           .from("fact_lead")
-          .select("source_row_key,created_at,phone,phone_status")
+          .select("source_row_key,created_at,phone,phone_status,dim_ad!inner(brand,owner,account_id)")
           .order("source_row_key", { ascending: true })
           .range(from, to);
         if (options.from) query = query.gte("created_at", options.from);
         if (options.to) query = query.lte("created_at", options.to);
+        if (options.brand) query = query.eq("dim_ad.brand", options.brand);
+        if (options.owner) query = query.eq("dim_ad.owner", options.owner);
+        if (options.account) query = query.eq("dim_ad.account_id", options.account);
         return query;
       },
     );
@@ -244,7 +262,7 @@ export async function getLiveTimeseries(options: { from?: string | null; to?: st
     throw liveDataUnavailable(error);
   }
     },
-    [`timeseries-${options.from || "all"}-${options.to || "all"}`],
+    [`timeseries-${options.from || "all"}-${options.to || "all"}-${options.brand || "all"}-${options.owner || "all"}-${options.account || "all"}`],
     { tags: ["report"], revalidate: 3600 }
   );
   return fetchCached();

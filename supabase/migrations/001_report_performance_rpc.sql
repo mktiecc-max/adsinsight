@@ -3,7 +3,8 @@ create or replace function report_performance(
   p_to_date date default null,
   p_level text default 'campaign',
   p_brands text[] default null,
-  p_owners text[] default null
+  p_owners text[] default null,
+  p_accounts text[] default null
 ) returns table (
   id text,
   name text,
@@ -56,6 +57,7 @@ create or replace function report_performance(
       and (p_to_date is null or date <= p_to_date)
       and (p_brands is null or brand = any(p_brands))
       and (p_owners is null or owner = any(p_owners))
+      and (p_accounts is null or account_id = any(p_accounts))
   ),
   ad_groups as (
     select

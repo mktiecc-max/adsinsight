@@ -159,9 +159,25 @@ export function AppShell({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  const handleFilterChange = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value && value !== "Tất cả") params.set(key, value);
+    else params.delete(key);
+    router.push(`?${params.toString()}`);
+  };
+
   const context = useMemo(
-    () => ({ preset, brand, owner, account, setPreset, setBrand, setOwner, setAccount }),
-    [preset, brand, owner, account],
+    () => ({ 
+      preset, 
+      brand: searchParams.get("brand") || "Tất cả", 
+      owner: searchParams.get("owner") || "Tất cả", 
+      account: searchParams.get("account") || "Tất cả", 
+      setPreset, 
+      setBrand: (v: string) => handleFilterChange("brand", v), 
+      setOwner: (v: string) => handleFilterChange("owner", v), 
+      setAccount: (v: string) => handleFilterChange("account", v) 
+    }),
+    [preset, searchParams],
   );
 
   const isActive = (href: string) =>
@@ -292,21 +308,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="select-filters">
               <SelectFilter
                 label="Brand"
-                value={brand}
+                value={searchParams.get("brand") || "Tất cả"}
                 options={["Tất cả", "ucmas", "uckid"]}
-                onChange={setBrand}
+                onChange={(v) => handleFilterChange("brand", v)}
               />
               <SelectFilter
                 label="Người chạy"
-                value={owner}
+                value={searchParams.get("owner") || "Tất cả"}
                 options={["Tất cả", "haitran", "haicm", "linhpt", "ngocanh"]}
-                onChange={setOwner}
+                onChange={(v) => handleFilterChange("owner", v)}
               />
               <SelectFilter
                 label="Tài khoản"
-                value={account}
+                value={searchParams.get("account") || "Tất cả"}
                 options={["Tất cả", "UCMAS HN", "UCMAS HCM", "UCKID"]}
-                onChange={setAccount}
+                onChange={(v) => handleFilterChange("account", v)}
               />
             </div>
 
