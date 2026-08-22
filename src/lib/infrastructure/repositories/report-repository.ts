@@ -331,11 +331,12 @@ export async function getUntrackedFunnel(options: { from?: string | null; to?: s
           .select("max_rank, first_seen_at")
           .is("first_ad_id", null);
 
-        if (options.from) {
-          query = query.gte("first_seen_at", options.from);
-        }
-        if (options.to) {
-          query = query.lte("first_seen_at", options.to);
+        if (options.from && options.to) {
+          query = query.or(`first_seen_at.gte.${options.from},first_seen_at.is.null`).or(`first_seen_at.lte.${options.to},first_seen_at.is.null`);
+        } else if (options.from) {
+          query = query.or(`first_seen_at.gte.${options.from},first_seen_at.is.null`);
+        } else if (options.to) {
+          query = query.or(`first_seen_at.lte.${options.to},first_seen_at.is.null`);
         }
 
         const { data, error } = await query;

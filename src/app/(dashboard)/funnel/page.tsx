@@ -236,14 +236,12 @@ export default async function FunnelPage({
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span>Không rõ nguồn (Organic)</span>
               <b className="num">{untracked.sql} SQL</b>
-              {untracked.sql > 0 && (
-                <div style={{ display: "flex", gap: "8px", fontSize: "0.8rem", color: "var(--fg-muted)", marginTop: 4 }}>
-                  <span>Bậc 1: <b className="num">{untracked.rank1}</b></span>
-                  <span>Bậc 2: <b className="num">{untracked.rank2}</b></span>
-                  <span>Bậc 3: <b className="num">{untracked.rank3}</b></span>
-                  <span>Bậc 4: <b className="num">{untracked.rank4}</b></span>
-                </div>
-              )}
+              <div style={{ display: "flex", gap: "8px", fontSize: "0.8rem", color: "var(--fg-muted)", marginTop: 4 }}>
+                <span>Bậc 1: <b className="num">{untracked.rank1}</b></span>
+                <span>Bậc 2: <b className="num">{untracked.rank2}</b></span>
+                <span>Bậc 3: <b className="num">{untracked.rank3}</b></span>
+                <span>Bậc 4: <b className="num">{untracked.rank4}</b></span>
+              </div>
             </div>
           </div>
         </section>
