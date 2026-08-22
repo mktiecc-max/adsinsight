@@ -119,9 +119,9 @@ export function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
                   <td>{lead.name}</td>
                   <td className="num">{lead.date}</td>
                   <td>
-                    {lead.ad ? <span>{lead.ad}</span> : <span className="organic-badge">Organic</span>}
+                    {lead.ad && lead.ad !== "Unknown" ? <span>{lead.ad}</span> : (lead.ad === "Unknown" ? <span className="subtle">—</span> : <span className="organic-badge">Organic</span>)}
                   </td>
-                  <td>{lead.campaign || "—"}</td>
+                  <td>{lead.campaign && lead.campaign !== "Unknown" ? lead.campaign : "—"}</td>
                   <td>{lead.page}</td>
                   <td><RankBadge rank={lead.rank} /></td>
                   <td>

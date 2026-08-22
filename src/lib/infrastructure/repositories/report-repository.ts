@@ -441,16 +441,47 @@ export async function getLiveCrmData(options: {
       try {
         let query = client
           .from("dim_customer")
-          .select("phone,first_seen_at,max_rank,current_rank,center,sale_owner,updated_at,in_crm,dim_ad!first_ad_id(brand,owner,account_id)")
-          .order("first_seen_at", { ascending: false, nullsFirst: true });
+          .select("phone,first_seen_at,max_rank,current_rank,center,sale_owner,updated_at,in_crm,dim_ad!first_ad_id(brand,owner,account_id)");
 
-        if (options.from) query = query.gte("first_seen_at", options.from);
-        if (options.to) query = query.lte("first_seen_at", options.to);
-        
         const { data, error } = await query;
         if (error) throw new Error(error.message);
         
         let rows = data || [];
+
+        // Lấy thông tin tương tác đầu tiên từ bảng fact_lead cho các SĐT này
+        if (rows.length > 0) {
+          const phones = rows.map(r => r.phone);
+          // Chia nhỏ mảng phones nếu quá lớn, nhưng thường thì không quá giới hạn của Supabase in()
+          const { data: leadsData } = await client
+            .from("fact_lead")
+            .select("phone, created_at, dim_ad(brand, owner, account_id, ad_name, campaign_name)")
+            .in("phone", phones)
+            .order("created_at", { ascending: true });
+
+          const leadsByPhone = new Map<string, any>();
+          for (const lead of leadsData || []) {
+            if (!leadsByPhone.has(lead.phone)) {
+              leadsByPhone.set(lead.phone, lead);
+            }
+          }
+
+          rows = rows.map(row => {
+            const firstLead = leadsByPhone.get(row.phone);
+            return {
+              ...row,
+              first_seen_at: firstLead?.created_at || row.first_seen_at,
+              dim_ad: firstLead?.dim_ad || row.dim_ad
+            };
+          });
+        }
+
+        // Lọc theo khoảng thời gian tương tác đầu
+        if (options.from) {
+          rows = rows.filter(r => r.first_seen_at && r.first_seen_at >= options.from!);
+        }
+        if (options.to) {
+          rows = rows.filter(r => r.first_seen_at && r.first_seen_at <= options.to!);
+        }
         
         if (options.brand || options.owner) {
           rows = rows.filter((row: any) => {
@@ -461,6 +492,13 @@ export async function getLiveCrmData(options: {
           });
         }
         
+        // Sắp xếp lại theo first_seen_at mới nhất lên đầu
+        rows.sort((a, b) => {
+          const timeA = a.first_seen_at ? new Date(a.first_seen_at).getTime() : 0;
+          const timeB = b.first_seen_at ? new Date(b.first_seen_at).getTime() : 0;
+          return timeB - timeA;
+        });
+
         return rows;
       } catch (error) {
         throw liveDataUnavailable(error);

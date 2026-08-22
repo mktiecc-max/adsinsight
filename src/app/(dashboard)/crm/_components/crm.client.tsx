@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Download, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -80,6 +80,8 @@ export function CrmClient({ initialData }: { initialData: any[] }) {
                 <th>Cơ sở</th>
                 <th>Sale</th>
                 <th>Ngày nhận QC</th>
+                <th>Quảng cáo mang về</th>
+                <th>Chiến dịch</th>
                 <th>Brand (QC đầu)</th>
                 <th>Người chạy</th>
                 <th>Cập nhật cuối</th>
@@ -92,10 +94,16 @@ export function CrmClient({ initialData }: { initialData: any[] }) {
                   <td><RankBadge rank={row.max_rank} /></td>
                   <td>{row.center}</td>
                   <td className="subtle">{row.sale_owner}</td>
-                  <td className="num">{row.first_seen_at}</td>
-                  <td className="subtle">{row.dim_ad?.brand}</td>
-                  <td className="subtle">{row.dim_ad?.owner}</td>
-                  <td className="num subtle">{row.updated_at ? new Date(row.updated_at).toLocaleDateString("vi-VN") : ""}</td>
+                  <td className="num">{row.first_seen_at ? new Intl.DateTimeFormat("vi-VN").format(new Date(row.first_seen_at)) : "—"}</td>
+                  <td>
+                    {row.dim_ad?.ad_name && row.dim_ad?.ad_name !== "Unknown" 
+                      ? row.dim_ad.ad_name 
+                      : (row.dim_ad?.ad_name === "Unknown" ? <span className="subtle">—</span> : <span className="organic-badge">Organic</span>)}
+                  </td>
+                  <td>{row.dim_ad?.campaign_name && row.dim_ad?.campaign_name !== "Unknown" ? row.dim_ad.campaign_name : "—"}</td>
+                  <td className="subtle">{row.dim_ad?.brand || "—"}</td>
+                  <td className="subtle">{row.dim_ad?.owner || "—"}</td>
+                  <td className="num subtle">{row.updated_at ? new Intl.DateTimeFormat("vi-VN").format(new Date(row.updated_at)) : "—"}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
