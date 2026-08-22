@@ -332,11 +332,13 @@ export async function getUntrackedFunnel(options: { from?: string | null; to?: s
           .is("first_ad_id", null);
 
         if (options.from && options.to) {
-          query = query.or(`first_seen_at.gte.${options.from},first_seen_at.is.null`).or(`first_seen_at.lte.${options.to},first_seen_at.is.null`);
+          query = query
+            .or(`first_seen_at.gte.${options.from},and(first_seen_at.is.null,updated_at.gte.${options.from})`)
+            .or(`first_seen_at.lte.${options.to},and(first_seen_at.is.null,updated_at.lte.${options.to})`);
         } else if (options.from) {
-          query = query.or(`first_seen_at.gte.${options.from},first_seen_at.is.null`);
+          query = query.or(`first_seen_at.gte.${options.from},and(first_seen_at.is.null,updated_at.gte.${options.from})`);
         } else if (options.to) {
-          query = query.or(`first_seen_at.lte.${options.to},first_seen_at.is.null`);
+          query = query.or(`first_seen_at.lte.${options.to},and(first_seen_at.is.null,updated_at.lte.${options.to})`);
         }
 
         const { data, error } = await query;
