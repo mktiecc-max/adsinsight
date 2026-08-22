@@ -337,7 +337,13 @@ export async function getLiveLeads(options: { from?: string | null; to?: string 
   return fetchCached();
 }
 
-export async function getUntrackedFunnel(options: { from?: string | null; to?: string | null }) {
+export async function getUntrackedFunnel(options: { 
+  from?: string | null; 
+  to?: string | null;
+  brand?: string | null;
+  owner?: string | null;
+  account?: string | null;
+}) {
   const fetchCached = unstable_cache(
     async () => {
       const client = createAdminClient();
@@ -379,6 +385,88 @@ export async function getUntrackedFunnel(options: { from?: string | null; to?: s
       }
     },
     [`untracked-${options.from || "all"}-${options.to || "all"}`],
+    { tags: ["report"], revalidate: 3600 }
+  );
+  return fetchCached();
+}
+
+export async function getLiveAdsData(options: {
+  from?: string | null;
+  to?: string | null;
+  brand?: string | null;
+  owner?: string | null;
+  account?: string | null;
+}) {
+  const fetchCached = unstable_cache(
+    async () => {
+      const client = createAdminClient();
+      if (!client) return null;
+
+      try {
+        let query = client
+          .from("mv_ad_daily_enriched")
+          .select("date,campaign_name,adset_name,ad_name,owner,brand,account_id,spend,messages,impressions,clicks,reach")
+          .order("date", { ascending: false, nullsFirst: false });
+          
+        if (options.from) query = query.gte("date", options.from);
+        if (options.to) query = query.lte("date", options.to);
+        if (options.brand) query = query.eq("brand", options.brand);
+        if (options.owner) query = query.eq("owner", options.owner);
+        if (options.account) query = query.eq("account_id", options.account);
+
+        const { data, error } = await query;
+        if (error) throw new Error(error.message);
+        return data || [];
+      } catch (error) {
+        throw liveDataUnavailable(error);
+      }
+    },
+    [`ads-data-${options.from || "all"}-${options.to || "all"}-${options.brand || "all"}-${options.owner || "all"}-${options.account || "all"}`],
+    { tags: ["report"], revalidate: 3600 }
+  );
+  return fetchCached();
+}
+
+export async function getLiveCrmData(options: {
+  from?: string | null;
+  to?: string | null;
+  brand?: string | null;
+  owner?: string | null;
+}) {
+  const fetchCached = unstable_cache(
+    async () => {
+      const client = createAdminClient();
+      if (!client) return null;
+
+      try {
+        let query = client
+          .from("dim_customer")
+          .select("phone,first_seen_at,max_rank,current_rank,center,sale_owner,updated_at,in_crm,dim_ad!first_ad_id(brand,owner,account_id)")
+          .order("first_seen_at", { ascending: false, nullsFirst: true });
+
+        if (options.from) query = query.gte("first_seen_at", options.from);
+        if (options.to) query = query.lte("first_seen_at", options.to);
+        
+        const { data, error } = await query;
+        if (error) throw new Error(error.message);
+        
+        let rows = data || [];
+        
+        if (options.brand || options.owner) {
+          rows = rows.filter((row: any) => {
+            if (!row.dim_ad) return false;
+            if (options.brand && row.dim_ad.brand !== options.brand) return false;
+            if (options.owner && row.dim_ad.owner !== options.owner) return false;
+            return true;
+          });
+        }
+        
+        return rows;
+      } catch (error) {
+        throw liveDataUnavailable(error);
+      }
+    },
+    [`crm-data-${options.from || "all"}-${options.to || "all"}-${options.brand || "all"}-${options.owner || "all"}`],
     { tags: ["report"], revalidate: 3600 }
   );
   return fetchCached();

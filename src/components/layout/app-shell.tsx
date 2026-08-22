@@ -189,6 +189,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: "/funnel", label: "Phễu" },
     { href: "/alerts", label: "Cảnh báo", badge: appState?.alerts_count },
     { href: "/leads", label: "Lead" },
+    { href: "/ads", label: "Quảng cáo" },
+    { href: "/crm", label: "CRM" },
     { href: "/sync", label: "Đồng bộ", admin: true },
     { href: "/settings/ads", label: "Cài đặt", admin: true },
   ];
