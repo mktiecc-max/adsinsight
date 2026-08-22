@@ -4,6 +4,17 @@ import { Download, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RankBadge } from "@/components/ui";
 
+function safeFormatDate(val: any): string {
+  if (!val) return "—";
+  const date = new Date(val);
+  if (isNaN(date.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("vi-VN").format(date);
+  } catch {
+    return "—";
+  }
+}
+
 export function CrmClient({ initialData }: { initialData: any[] }) {
   const [query, setQuery] = useState("");
   const rows = initialData;
@@ -94,7 +105,7 @@ export function CrmClient({ initialData }: { initialData: any[] }) {
                   <td><RankBadge rank={row.max_rank} /></td>
                   <td>{row.center}</td>
                   <td className="subtle">{row.sale_owner}</td>
-                  <td className="num">{row.first_seen_at ? new Intl.DateTimeFormat("vi-VN").format(new Date(row.first_seen_at)) : "—"}</td>
+                  <td className="num">{safeFormatDate(row.first_seen_at)}</td>
                   <td>
                     {row.dim_ad?.ad_name && row.dim_ad?.ad_name !== "Unknown" 
                       ? row.dim_ad.ad_name 
@@ -103,7 +114,7 @@ export function CrmClient({ initialData }: { initialData: any[] }) {
                   <td>{row.dim_ad?.campaign_name && row.dim_ad?.campaign_name !== "Unknown" ? row.dim_ad.campaign_name : "—"}</td>
                   <td className="subtle">{row.dim_ad?.brand || "—"}</td>
                   <td className="subtle">{row.dim_ad?.owner || "—"}</td>
-                  <td className="num subtle">{row.updated_at ? new Intl.DateTimeFormat("vi-VN").format(new Date(row.updated_at)) : "—"}</td>
+                  <td className="num subtle">{safeFormatDate(row.updated_at)}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (

@@ -451,26 +451,40 @@ export async function getLiveCrmData(options: {
         // Lấy thông tin tương tác đầu tiên từ bảng fact_lead cho các SĐT này
         if (rows.length > 0) {
           const phones = rows.map(r => r.phone);
-          // Chia nhỏ mảng phones nếu quá lớn, nhưng thường thì không quá giới hạn của Supabase in()
           const { data: leadsData } = await client
             .from("fact_lead")
-            .select("phone, created_at, dim_ad(brand, owner, account_id, ad_name, campaign_name)")
+            .select("phone, created_at, ad_id")
             .in("phone", phones)
             .order("created_at", { ascending: true });
 
           const leadsByPhone = new Map<string, any>();
+          const adIds = new Set<string>();
           for (const lead of leadsData || []) {
             if (!leadsByPhone.has(lead.phone)) {
               leadsByPhone.set(lead.phone, lead);
+              if (lead.ad_id) adIds.add(lead.ad_id);
+            }
+          }
+
+          let dimensions = new Map<string, any>();
+          if (adIds.size > 0) {
+            const { data: adData } = await client
+              .from("dim_ad")
+              .select("ad_id, brand, owner, account_id, ad_name, campaign_name")
+              .in("ad_id", Array.from(adIds));
+            
+            for (const ad of adData || []) {
+              dimensions.set(ad.ad_id, ad);
             }
           }
 
           rows = rows.map(row => {
             const firstLead = leadsByPhone.get(row.phone);
+            const dimAd = firstLead?.ad_id ? dimensions.get(firstLead.ad_id) : undefined;
             return {
               ...row,
               first_seen_at: firstLead?.created_at || row.first_seen_at,
-              dim_ad: firstLead?.dim_ad || row.dim_ad
+              dim_ad: dimAd || row.dim_ad
             };
           });
         }

@@ -1,0 +1,1 @@
+import { createClient } from '@supabase/supabase-js'; const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY); client.from('fact_lead').select('phone, created_at, dim_ad(brand, owner, account_id, ad_name, campaign_name)').limit(1).then(res => console.log(JSON.stringify(res, null, 2))).catch(console.error);
