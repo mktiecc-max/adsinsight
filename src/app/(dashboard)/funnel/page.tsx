@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { MetricValue, SectionHeading } from "@/components/ui";
 import { cn } from "@/lib/shared/utils";
-import { getLivePerformance } from "@/lib/infrastructure/repositories/report-repository";
+import { getLivePerformance, getUntrackedFunnel } from "@/lib/infrastructure/repositories/report-repository";
 
 export default async function FunnelPage({
   searchParams,
@@ -24,6 +24,7 @@ export default async function FunnelPage({
 
   const rawLive = await getLivePerformance({ from, to, level: "campaign" });
   const live = rawLive || [];
+  const untracked = await getUntrackedFunnel({ from, to });
 
   if (!live || live.length === 0) {
     return (
@@ -232,9 +233,17 @@ export default async function FunnelPage({
               <b className="num">{totals.sql} SQL</b>
             </div>
             <div className="vs">vs</div>
-            <div>
-              <span>Organic</span>
-              <b className="num">0 SQL</b>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span>Không rõ nguồn (Organic)</span>
+              <b className="num">{untracked.sql} SQL</b>
+              {untracked.sql > 0 && (
+                <div style={{ display: "flex", gap: "8px", fontSize: "0.8rem", color: "var(--fg-muted)", marginTop: 4 }}>
+                  <span>Bậc 1: <b className="num">{untracked.rank1}</b></span>
+                  <span>Bậc 2: <b className="num">{untracked.rank2}</b></span>
+                  <span>Bậc 3: <b className="num">{untracked.rank3}</b></span>
+                  <span>Bậc 4: <b className="num">{untracked.rank4}</b></span>
+                </div>
+              )}
             </div>
           </div>
         </section>

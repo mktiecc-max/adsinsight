@@ -318,3 +318,47 @@ export async function getLiveLeads(options: { from?: string | null; to?: string 
   );
   return fetchCached();
 }
+
+export async function getUntrackedFunnel(options: { from?: string | null; to?: string | null }) {
+  const fetchCached = unstable_cache(
+    async () => {
+      const client = createAdminClient();
+      if (!client) return { sql: 0, rank1: 0, rank2: 0, rank3: 0, rank4: 0 };
+
+      try {
+        let query = client
+          .from("dim_customer")
+          .select("max_rank, first_seen_at")
+          .is("first_ad_id", null);
+
+        if (options.from) {
+          query = query.gte("first_seen_at", options.from);
+        }
+        if (options.to) {
+          query = query.lte("first_seen_at", options.to);
+        }
+
+        const { data, error } = await query;
+        if (error) throw new Error(error.message);
+
+        const rows = data || [];
+        const result = { sql: rows.length, rank1: 0, rank2: 0, rank3: 0, rank4: 0 };
+
+        rows.forEach((r: any) => {
+          if (r.max_rank >= 1) result.rank1++;
+          if (r.max_rank >= 2) result.rank2++;
+          if (r.max_rank >= 3) result.rank3++;
+          if (r.max_rank >= 4) result.rank4++;
+        });
+
+        return result;
+      } catch (error) {
+        console.error("getUntrackedFunnel error:", error);
+        return { sql: 0, rank1: 0, rank2: 0, rank3: 0, rank4: 0 };
+      }
+    },
+    [`untracked-${options.from || "all"}-${options.to || "all"}`],
+    { tags: ["report"], revalidate: 3600 }
+  );
+  return fetchCached();
+}
